@@ -5,9 +5,6 @@
 /* GCC lets us add "attributes" to functions, function
    parameters, etc. to indicate their properties.
    See the GCC manual for details. */
-#define UNUSED __attribute__ ((unused))
-#define NO_RETURN __attribute__ ((noreturn))
-
 /* Halts the OS, printing the source file name, line number, and
    function name, plus a user-specific message. */
 #define PANIC(line, argument) printf(line, argument)
