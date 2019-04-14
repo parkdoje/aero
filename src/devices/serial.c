@@ -1,4 +1,4 @@
-#include "serial.h"
+#include "../include/serial.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "../lib/debug.h"
