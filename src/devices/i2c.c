@@ -8,7 +8,6 @@
 
 int open_device(const char* device_name)
 {
-	
 	int fd;
 	fd = open(device_name, O_RDWR);
 	if(fd < 0)
@@ -25,7 +24,7 @@ static int check_functions(int fd)
 	unsigned long funcs;
 	int func_list[7] = { I2C_FUNC_SMBUS_QUICK, I2C_FUNC_SMBUS_READ_BYTE, I2C_FUNC_SMBUS_WRITE_BYTE,
 						I2C_FUNC_SMBUS_READ_BYTE_DATA, I2C_FUNC_SMBUS_WRITE_BYTE_DATA, I2C_FUNC_SMBUS_READ_WORD_DATA,
-						I2C_FUNC_SMBUS_WRITE_WORD_DATA
+						I2C_FUNC_SMBUS_WRITE_WORD_DATA 
 						};
 	if(ioctl(fd, I2C_FUNCS, &funcs) < 0) // get the functions
 		return -1;
