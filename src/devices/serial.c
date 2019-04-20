@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 
 
@@ -29,7 +30,8 @@ int init_serial(struct comm_device* self, char* serial_name, int baudrate)
 }
 int open_serial()
 {
-	exit(-1);
+	printf("unimplemented function call! exit!\n");
+	exit(1);
 }
 void close_serial(struct comm_device* self)
 {
@@ -58,25 +60,37 @@ int serial_open(const char* name, int baudrate)
 	}
 	fd = open(name, O_RDWR | O_NOCTTY | O_NDELAY);
 	if (fd == -1)
+	{
+		printf("fd: %d\n", fd);
 		return -1;
+	}
 
-	tcgetattr(fd, &options);
+	if (tcgetattr(fd, &options) == -1)
+	{
+        int e = errno;
+		printf("failed to get option!\n");
+		printf("errno %d from tcgetattr\n", e);
+	}
+
 	cfmakeraw(&options);
 	cfsetispeed(&options, baud);
 	cfsetospeed(&options, baud);
 
-	options.c_cflag |= (CLOCAL | CREAD);
-	options.c_cflag &= ~PARENB;
+    //set terminal to raw mode 
+	options.c_lflag &= ~(ICANON | ECHO | ECHOE| ISIG);
+    options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
 
-	options.c_cflag &= ~CSTOPB;
-	options.c_cflag &= ~CSIZE;
+	options.c_cflag |= (CLOCAL | CREAD);
+	//options.c_cflag &= ~PARENB;
+	options.c_cflag &= ~(CSTOPB | CSIZE);
 	options.c_cflag |= CS8;
 
-	options.c_lflag &= ~(ICANON | ECHO | ECHOE| ISIG);
 	options.c_oflag &= ~OPOST;
-	
+
+
+    // set serial io as non blocking mode	
 	options.c_cc[VMIN] = 0;
-	options.c_cc[VTIME] = 0;
+	options.c_cc[VTIME] = 10;
 
 	tcsetattr(fd, TCSANOW, &options);
 
@@ -84,7 +98,10 @@ int serial_open(const char* name, int baudrate)
 
 	stat |= TIOCM_DTR;
 	stat |= TIOCM_RTS;
+
 	ioctl(fd, TIOCMSET, &stat);
+
+    usleep(10000);
 	return fd;
 }
 
@@ -92,22 +109,22 @@ int serial_open(const char* name, int baudrate)
 int serial_read(int fd, int addr UNUSED)
 {
 	int received;
-	read(fd, &received,1);
+	read(fd, &received, 1);
 	return received;
 }
 
-int serial_nread(int fd, int addr, int count, char* buffer)
+int serial_nread(int fd, int addr UNUSED, int count, uint8_t* buffer)
 {
 	int received = read(fd, (void*)buffer, count);
 	return received;
 }
 
-void serial_write(int fd, int addr, char data)
+void serial_write(int fd, int addr, uint8_t data)
 {
 	write(fd, &data, 1);
 }
 
-void serial_nwrite(int fd, int addr, int count, char* data)
+void serial_nwrite(int fd, int addr, int count, uint8_t* data)
 {
 	write(fd, data, count);
 }

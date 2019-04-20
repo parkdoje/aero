@@ -8,6 +8,7 @@
 
 int open_device(const char* device_name)
 {
+    /* no need to set baudrate, it will configured by kernel*/
 	int fd;
 	fd = open(device_name, O_RDWR);
 	if(fd < 0)
@@ -50,7 +51,7 @@ static inline int i2c_access(int fd, char rw, uint8_t command, int size, union i
 	return ioctl(fd, I2C_SMBUS, &args);
 }
 
-static int set_address(int fd, int addr)
+int set_address(int fd, int addr)
 {
 	if (ioctl(fd, I2C_SLAVE, addr) < 0)
 	{
@@ -76,15 +77,6 @@ int i2c_read_word(int fd, int addr)
 		return -1;
 	return data.word & 0xFFFF;
 }
-int i2c_read_block(int fd, int addr, uint8_t* buffer)
-{
-	union i2c_smbus_data data;
-
-	int len = i2c_access(fd, I2C_SMBUS_READ, addr, I2C_SMBUS_BLOCK_DATA, &data);
-	memcpy(buffer, &(data.block) + sizeof(uint8_t), len);
-
-	return len;
-}
 
 int i2c_write_byte(int fd, int addr, uint8_t val)
 {
@@ -105,6 +97,9 @@ int i2c_write_word(int fd, int addr, uint16_t val)
 int i2c_write_block(int fd, int addr, uint8_t* buffer, size_t size)
 {
 	union i2c_smbus_data data;
+    if(size > I2C_SMBUS_BLOCK_MAX)
+        return -1;//error
+
 	memcpy(data.block + sizeof(uint8_t), buffer, size);
 	data.block[0] = size;
 
