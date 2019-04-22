@@ -6,6 +6,27 @@
 
 #include "../include/i2c.h"
 
+
+
+i2c_dev_t* init_i2c(i2c_dev_t* self, const char* device_name)
+{
+	int fd = open_device(device_name);
+	if(fd < 0) 
+		return NULL;
+
+	comm_device_t* super = &self->super;
+
+	super->read_byte = i2c_read_byte;
+	super->read_nbyte = NULL;
+
+	super->write_byte = i2c_write_byte;
+	super->write_nbyte = NULL;
+
+
+
+	
+}
+
 int open_device(const char* device_name)
 {
 	int fd;
@@ -54,62 +75,65 @@ static int set_address(int fd, int addr)
 {
 	if (ioctl(fd, I2C_SLAVE, addr) < 0)
 	{
-		//error
 		return -1;
 	}
 	return 0;
 }
 
-int i2c_read_byte(int fd, int addr)
+int i2c_read_byte(comm_device_t* self)
 {
 	union i2c_smbus_data data;
-	if( i2c_access(fd, I2C_SMBUS_READ, addr, I2C_SMBUS_BYTE_DATA, &data))
+	if( i2c_access(self->fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
 		return -1;
-	
 	return data.byte & 0xFF;
 }
-int i2c_read_word(int fd, int addr)
+
+int i2c_write_byte(comm_device_t* self, uint8_t value)
 {
 	union i2c_smbus_data data;
+	data.byte = value;
 
-	if (i2c_access(fd, I2C_SMBUS_READ, addr, I2C_SMBUS_WORD_DATA, &data))
+	return i2c_access(self->fd, I2C_SMBUS_WRITE, value, I2C_SMBUS_BYTE, NULL);
+}
+
+int i2c_read_byte_reg(comm_device_t* self, uint8_t reg)
+{
+	union i2c_smbus_data data;
+	if(i2c_access(self->fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
 		return -1;
-	return data.word & 0xFFFF;
+	return data.byte & 0xFF;
 }
-int i2c_read_block(int fd, int addr, uint8_t* buffer)
+
+int i2c_read_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer)
 {
 	union i2c_smbus_data data;
+	if (len != 2)
+		return -1;
 
-	int len = i2c_access(fd, I2C_SMBUS_READ, addr, I2C_SMBUS_BLOCK_DATA, &data);
-	memcpy(buffer, &(data.block) + sizeof(uint8_t), len);
-
-	return len;
+	if(i2c_access(self->fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
+		return -1;
+	memcpy(buffer, &data.word, 2);
+	return 2;
 }
 
-int i2c_write_byte(int fd, int addr, uint8_t val)
+int i2c_write_byte_reg(comm_device_t* self, uint8_t reg, uint8_t data)
 {
-	union i2c_smbus_data data;
-	data.byte = val;
+	union i2c_smbus_data packet;
 
-	return i2c_access(fd, I2C_SMBUS_WRITE, addr, I2C_SMBUS_BYTE_DATA, &data);
+	packet.byte = data;
+
+	return i2c_access(self->fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &packet);
 }
 
-int i2c_write_word(int fd, int addr, uint16_t val)
+int i2c_write_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer)
 {
-	union i2c_smbus_data data;
-	data.word = val;
+	union i2c_smbus_data packet; 
 
-	return i2c_access(fd, I2C_SMBUS_WRITE, addr, I2C_SMBUS_WORD_DATA, &data);
+	memcpy(&(packet.block)+ sizeof(uint8_t), buffer, len);
+	packet.block[0] = len;
+
 }
 
-int i2c_write_block(int fd, int addr, uint8_t* buffer, size_t size)
-{
-	union i2c_smbus_data data;
-	memcpy(data.block + sizeof(uint8_t), buffer, size);
-	data.block[0] = size;
-
-	return i2c_access(fd, I2C_SMBUS_WRITE, addr, I2C_SMBUS_BLOCK_DATA, &data);
-}
 
 
 

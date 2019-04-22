@@ -1,7 +1,15 @@
 #include "comm_device.h"
 #include "../lib/attr.h"
 
-int init_serial(struct comm_device*, char*, int);
+
+typedef struct _serial_dev_t
+{
+    comm_device_t super;
+    speed_t baud;
+
+    void (*data_flust)(serial_dev_t* self);
+}serial_dev_t;
+
 
 int serial_open(const char*, int);
 int open_serial();

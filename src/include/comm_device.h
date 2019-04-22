@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 enum comm_type 
 {
@@ -9,20 +11,16 @@ enum comm_type
 	SERIAL,
 	NON
 };
-
-struct comm_device
+typedef struct comm_device // interface of communication devices 
 {
-	enum comm_type type;
 	int fd;
-	int (*open_comm)();
-	void (*close_comm)(struct comm_device*);
+	enum comm_type type;
+	pthread_mutex_t comm_lock;
+	int (*close_device)(struct comm_device* self);
 
-	void (*data_flush)(int);
+	int (*read_byte)(struct comm_device* self);
+	int (*read_nbyte)(struct comm_device* self, size_t len, uint8_t* buffer);
 
-	int (*read_byte)(int, int);
-	int (*read_nbyte)(int, int, int, char*);
-
-	void (*write_byte)(int, int, char);
-	void (*write_nbyte)(int, int, int, char*);
-};
-	
+	int (*write_byte)(struct comm_device* self, uint8_t data);
+	int (*write_nbyte)(struct comm_device* self, size_t len, uint8_t* buffer);
+}comm_device_t;
