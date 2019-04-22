@@ -23,20 +23,20 @@ typedef struct _i2c_device_t
 i2c_dev_t* init_i2c(const char* device_name);
 
 int open_device(const char* device_name);
-int close_device(comm_device_t* self);
+int close_device(i2c_dev_t* self);
 static int check_functions(int fd, unsigned int func_code);
-int set_address(comm_device_t* self, int addr);
+int set_address(i2c_dev_t* self, int addr);
 static inline int i2c_access(int fd, char rw, uint8_t command, int size, union i2c_smbus_data* data);
 
 
 
 
-int i2c_read_byte(comm_device_t* self);
-int i2c_write_byte(comm_device_t* self, uint8_t data);
+int i2c_read_byte(i2c_dev_t* self);
+int i2c_write_byte(i2c_dev_t* self, uint8_t data);
 
-int i2c_read_byte_reg(comm_device_t* self, uint8_t reg);
-int i2c_read_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
+int i2c_read_byte_reg(i2c_dev_t* self, uint8_t reg);
+int i2c_read_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 
-int i2c_write_byte_reg(comm_device_t* self, uint8_t reg, uint8_t data);
-int i2c_write_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
+int i2c_write_byte_reg(i2c_dev_t* self, uint8_t reg, uint8_t data);
+int i2c_write_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 

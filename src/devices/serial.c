@@ -11,25 +11,24 @@
 
 
 
-int init_serial(struct comm_device* self, char* serial_name, int baudrate)
+serial_dev_t* init_serial(char* serial_name, int baudrate)
 {
-	self->fd = serial_open(serial_name, baudrate);
+	comm_device_t* super = malloc(sizeof(serial_dev_t));
+	serial_dev_t* self = (serial_dev_t*)super;
 
-	self->read_byte = serial_read;
-	self->read_nbyte = serial_nread;
-	
-	self->write_byte = serial_write;
-	self->write_nbyte = serial_nwrite;
+	super->fd = serial_open(serial_name, baudrate);
+	super->type = UART;
+	super->comm_lock = PTHREAD_MUTEX_INITIALIZER;
 
-	self->data_flush = data_flush;
-	
-	self->close_comm = close_serial;
-	self->open_comm = open_serial;
+	super->read_byte = serial_read;
+	super->read_nbyte = serial_nread;
+
+	super->write_byte = serial_write;
+	super->write_nbyte = serial_nwrite;
+
+	self->data_flush =data_flush;
+
 	return 0;
-}
-int open_serial()
-{
-	exit(-1);
 }
 void close_serial(struct comm_device* self)
 {
@@ -89,30 +88,30 @@ int serial_open(const char* name, int baudrate)
 }
 
 
-int serial_read(int fd, int addr UNUSED)
+int serial_read(serial_dev_t* self)
 {
 	int received;
-	read(fd, &received,1);
+	read(self->super.fd, &received, 1);
 	return received;
 }
 
-int serial_nread(int fd, int addr, int count, char* buffer)
+int serial_nread(serial_dev_t* self, size_t len, uint8_t* buffer)
 {
-	int received = read(fd, (void*)buffer, count);
+	int received = read(self->super.fd, (void*)buffer, len);
 	return received;
 }
 
-void serial_write(int fd, int addr, char data)
+void serial_write(serial_dev_t* self, uint8_t data)
 {
-	write(fd, &data, 1);
+	write(self->super.fd, &data, 1);
 }
 
-void serial_nwrite(int fd, int addr, int count, char* data)
+void serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer)
 {
-	write(fd, data, count);
+	write(self->super.fd, buffer, len);
 }
 
-void data_flush(int fd)
+void data_flush(serial_dev_t* self)
 {
-	tcflush(fd, TCIOFLUSH);
+	tcflush(self->super.fd, TCIOFLUSH);
 }

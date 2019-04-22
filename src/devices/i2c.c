@@ -48,18 +48,18 @@ i2c_dev_t* init_i2c(const char* device_name)
 
 }
 
-int set_address(comm_device_t* self, int addr)
+int set_address(i2c_dev_t* self, int addr)
 {
-	ASSERT(self->type = I2C);
+	ASSERT(self->super.type = I2C);
 
- 	if(ioctl(self->fd, I2C_SLAVE, addr) < 0)
+ 	if(ioctl(self->super.fd, I2C_SLAVE, addr) < 0)
 	 	return -1; 
-	((i2c_dev_t*)(self))->dev_addr = addr;
+	self->dev_addr = addr;
 	return 0;
 }
-uint8_t get_address(comm_device_t* self)
+uint8_t get_address(i2c_dev_t* self)
 {
-	ASSERT(self->type = I2C);
+	ASSERT(self->super.type = I2C);
 	return ((i2c_dev_t*)self)->dev_addr;
 }
 
@@ -74,9 +74,9 @@ int open_device(const char* device_name)
 	return fd;
 }
 
-int close_device(comm_device_t* _self)
+int close_device(i2c_dev_t* _self)
 {
-	ASSERT(_self->type = I2C);
+	ASSERT(_self->super.type = I2C);
 	i2c_dev_t* self = (i2c_dev_t*)_self;
 	free(self);
 }
@@ -103,62 +103,53 @@ static inline int i2c_access(int fd, char rw, uint8_t command, int size, union i
 	return ioctl(fd, I2C_SMBUS, &args);
 }
 
-static int set_address(int fd, int addr)
-{
-	if (ioctl(fd, I2C_SLAVE, addr) < 0)
-	{
-		return -1;
-	}
-	return 0;
-}
-
-int i2c_read_byte(comm_device_t* self)
+int i2c_read_byte(i2c_dev_t* self)
 {
 	
 	union i2c_smbus_data data;
-	if( i2c_access(self->fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
+	if( i2c_access(self->super.fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
 		return -1;
 	return data.byte & 0xFF;
 }
 
-int i2c_write_byte(comm_device_t* self, uint8_t value)
+int i2c_write_byte(i2c_dev_t* self, uint8_t value)
 {
 	union i2c_smbus_data data;
 	data.byte = value;
 
-	return i2c_access(self->fd, I2C_SMBUS_WRITE, value, I2C_SMBUS_BYTE, NULL);
+	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, value, I2C_SMBUS_BYTE, NULL);
 }
 
-int i2c_read_byte_reg(comm_device_t* self, uint8_t reg)
+int i2c_read_byte_reg(i2c_dev_t* self, uint8_t reg)
 {
 	union i2c_smbus_data data;
-	if(i2c_access(self->fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
+	if(i2c_access(self->super.fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
 		return -1;
 	return data.byte & 0xFF;
 }
 
-int i2c_read_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer)
+int i2c_read_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer)
 {
 	union i2c_smbus_data data;
 	if (len != 2)
 		return -1;
 
-	if(i2c_access(self->fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
+	if(i2c_access(self->super.fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
 		return -1;
 	memcpy(buffer, &data.word, 2);
 	return 2;
 }
 
-int i2c_write_byte_reg(comm_device_t* self, uint8_t reg, uint8_t data)
+int i2c_write_byte_reg(i2c_dev_t* self, uint8_t reg, uint8_t data)
 {
 	union i2c_smbus_data packet;
 
 	packet.byte = data;
 
-	return i2c_access(self->fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &packet);
+	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &packet);
 }
 
-int i2c_write_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* buffer)
+int i2c_write_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer)
 {
 	union i2c_smbus_data packet; 
 	if(len > I2C_SMBUS_BLOCK_MAX)
@@ -167,7 +158,7 @@ int i2c_write_nbyte_reg(comm_device_t* self, uint8_t reg, size_t len, uint8_t* b
 	memcpy(&(packet.block)+ sizeof(uint8_t), buffer, len);
 	packet.block[0] = len;
 
-	return i2c_access(self->fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &packet);
+	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &packet);
 }
 
 

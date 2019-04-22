@@ -7,21 +7,20 @@ typedef struct _serial_dev_t
     comm_device_t super;
     speed_t baud;
 
-    void (*data_flust)(serial_dev_t* self);
+    void (*data_flush)(serial_dev_t* self);
 }serial_dev_t;
 
 
 int serial_open(const char*, int);
-int open_serial();
 void close_serial(struct comm_device*);
 
-void data_flush(int fd);
+void data_flush(serial_dev_t* self);
 
-int serial_read(int fd, int addr UNUSED);
-int serial_nread(int fd, int addr UNUSED, int count, char* buffer);
+int serial_read(serial_dev_t* self);
+int serial_nread(serial_dev_t* self, size_t len, uint8_t* buffer);
 
-void serial_write(int fd, int addr UNUSED, char data);
-void serial_nwrite(int fd, int addr UNUSED, int count, char* buffer);
+void serial_write(serial_dev_t* self, uint8_t data);
+void serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer);
 
 
 
