@@ -25,6 +25,7 @@ int open_device(const char* device_name);
 int close_device(i2c_dev_t* self);
 static int check_functions(int fd, unsigned int func_code);
 int set_address(i2c_dev_t* self, int addr);
+uint8_t get_address(i2c_dev_t* self);
 static inline int i2c_access(int fd, char rw, uint8_t command, int size, union i2c_smbus_data* data);
 
 

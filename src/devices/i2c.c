@@ -12,12 +12,14 @@ i2c_dev_t* init_i2c(const char* device_name)
 {
 	int fd = open_device(device_name);
 	if(fd < 0) 
+	{
 		return NULL;
+	}
 
 	comm_device_t* super = malloc(sizeof(i2c_dev_t));
 	i2c_dev_t* self = (i2c_dev_t*)self;
 	super->fd = fd;
-	super->comm_lock = PTHREAD_MUTEX_INITIALIZER;
+	super->comm_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	super->type = I2C;
 	super->read_byte = (
 		check_functions(super->fd, I2C_FUNC_SMBUS_READ_BYTE) 
