@@ -4,20 +4,19 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-
 typedef struct _i2c_device_t
 {
     comm_device_t super;
     uint8_t dev_addr;
 
-    int (*set_addr)(i2c_dev_t* self, uint8_t addr);
-    uint8_t (*get_addr)(i2c_dev_t* self);
+    int (*set_addr)(struct _i2c_device_t* self, uint8_t addr);
+    uint8_t (*get_addr)(struct _i2c_device_t* self);
 
-    int (*read_byte_reg)(i2c_dev_t* self, uint8_t reg);
-    int (*read_nbyte_reg)(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer);
+    int (*read_byte_reg)(struct _i2c_device_t* self, uint8_t reg);
+    int (*read_nbyte_reg)(struct _i2c_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 
-    int (*write_byte_reg)(i2c_dev_t* self, uint8_t reg, uint8_t data);
-    int (*write_nbyte_reg)(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer);
+    int (*write_byte_reg)(struct _i2c_device_t* self, uint8_t reg, uint8_t data);
+    int (*write_nbyte_reg)(struct _i2c_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 }i2c_dev_t;
 
 i2c_dev_t* init_i2c(const char* device_name);
