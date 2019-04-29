@@ -1,6 +1,7 @@
 #include "../include/serial.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "../lib/debug.h"
 #include <termios.h>
 #include <unistd.h>
@@ -18,7 +19,7 @@ serial_dev_t* init_serial(char* serial_name, int baudrate)
 
 	super->fd = serial_open(serial_name, baudrate);
 	super->type = UART;
-	super->comm_lock = PTHREAD_MUTEX_INITIALIZER;
+	super->comm_lock =(pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 
 	super->read_byte = serial_read;
 	super->read_nbyte = serial_nread;

@@ -1,3 +1,4 @@
+#pragma once
 #include "comm_device.h"
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>

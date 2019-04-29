@@ -16,8 +16,8 @@ i2c_dev_t* init_i2c(const char* device_name)
 		return NULL;
 	}
 
-	comm_device_t* super = malloc(sizeof(i2c_dev_t));
-	i2c_dev_t* self = (i2c_dev_t*)self;
+	comm_device_t* super = (comm_device_t*)malloc(sizeof(i2c_dev_t));
+	i2c_dev_t* self = (i2c_dev_t*)super;
 	super->fd = fd;
 	super->comm_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	super->type = I2C;
@@ -52,7 +52,7 @@ i2c_dev_t* init_i2c(const char* device_name)
 
 int set_address(i2c_dev_t* self, int addr)
 {
-	ASSERT(self->super.type = I2C);
+	ASSERT(self->super.type == I2C);
 
  	if(ioctl(self->super.fd, I2C_SLAVE, addr) < 0)
 	 	return -1; 
@@ -90,7 +90,7 @@ static int check_functions(int fd, unsigned int func_code)
 	if(ioctl(fd, I2C_FUNCS, &funcs) < 0) // get the functions
 		return -1;
 
-	return !(func_code & funcs);
+	return (func_code & funcs);
 }
 
 

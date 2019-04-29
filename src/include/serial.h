@@ -1,13 +1,14 @@
+#pragma once
 #include "comm_device.h"
 #include "../lib/attr.h"
 
 
-typedef struct _serial_dev_t
+typedef struct 
 {
     comm_device_t super;
     speed_t baud;
 
-    void (*data_flush)(serial_dev_t* self);
+    void (*data_flush)(struct serial_dev_t* self);
 }serial_dev_t;
 
 

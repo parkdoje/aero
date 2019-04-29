@@ -1,4 +1,5 @@
 #include "../include/i2c.h"
+#include "../include/serial.h"
 #include <stdio.h>
 #include <stdlib.h>
 
