@@ -1,6 +1,7 @@
 #pragma once
 #include "comm_device.h"
 #include "../lib/attr.h"
+#include <termios.h>
 
 
 typedef struct 

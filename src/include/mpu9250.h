@@ -3,17 +3,18 @@
 #include "mpu9250_reg.h"
 #include <stdbool.h>
 
-
+#define MPU9250_ADDR 0x68
 
 typedef struct
 {/*singleton object!*/
     sensor_t super;
     bool GYRO_INIT, ACCEL_INIT;
-    float accel_factor, gyro_factor;
+    uint8_t accel_factor, gyro_factor;
 }mpu9250_t;
 
-bool init_mpu9250(mpu9250_t* IMU, uint8_t acc_scale, uint8_t gy_scale, uint8_t sample_rate);
 
+
+mpu9250_t* init_mpu9250(i2c_dev_t* i2c ,uint8_t acc_scale, uint8_t gy_scale, uint8_t sample_rate);
 
 static bool accel_test();
 static bool gyro_test();
