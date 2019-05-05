@@ -135,7 +135,7 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
     return self;
 }
 
-void read_accel_data(mpu9250_t* self)
+void read_accel_data(mpu9250_t* self, accel_data_t* data)
 {
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
     if (i2c->set_addr(i2c, self->super.device_addr) < 0)
@@ -145,5 +145,8 @@ void read_accel_data(mpu9250_t* self)
     acc[0] = (i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
     acc[1] = (i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
     acc[2] = (i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
+    data->a_x = (float)acc[0]*self->accel_res;
+    data->a_y = (float)acc[1]*self->accel_res;
+    data->a_z = (float)acc[2]*self->accel_res;
     
 }

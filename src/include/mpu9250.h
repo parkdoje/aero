@@ -10,14 +10,17 @@ typedef struct
     bool GYRO_INIT, ACCEL_INIT;
     float accel_res, gyro_res;
 
+    void (*read_accel_data)(mpu9250_t* self, accel_data_t* data);
+    void (*read_gyro_data)(mpu9250_t* self, gyro_data_t* data);
+
 }mpu9250_t;
 
 
 
 mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate);
 
-void read_accel_data(mpu9250_t* self);
-void read_gyro_data(mpu9250_t* self);
+void read_accel_data(mpu9250_t* self, accel_data_t* data);
+void read_gyro_data(mpu9250_t* self, gyro_data_t* data);
 
 typedef struct 
 {
