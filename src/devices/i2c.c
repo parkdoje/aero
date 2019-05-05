@@ -197,7 +197,7 @@ int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, ui
 
 	packet |= (data) << (pos - len + 1);
 	
-	return i2c_write_byte_reg(self, reg, packet);
+	return self->write_byte_reg(self, reg, packet);
 }
 
 

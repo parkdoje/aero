@@ -8,7 +8,7 @@ typedef struct
 {/*singleton object!*/
     sensor_t super;
     bool GYRO_INIT, ACCEL_INIT;
-    int accel_factor, gyro_factor;
+    float accel_res, gyro_res;
 
 }mpu9250_t;
 

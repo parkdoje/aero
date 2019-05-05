@@ -9,6 +9,5 @@ int main()
     mpu9250_t* mpu = init_mpu9250(i2c, 100);
 
     read_accel_data(mpu);
-
-
+    return 0;
 }
