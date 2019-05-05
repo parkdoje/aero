@@ -4,7 +4,7 @@
 #include <termios.h>
 
 
-typedef struct 
+typedef struct serial_dev_t
 {
     comm_device_t super;
     speed_t baud;
