@@ -94,12 +94,12 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     selfTest[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
 
     // Retrieve factory self-test value from self-test code reads
-    factoryTrim[0] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[0] - 1.0) )); 
-    factoryTrim[1] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[1] - 1.0) ));
-    factoryTrim[2] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[2] - 1.0) ));
-    factoryTrim[3] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[3] - 1.0) ));
-    factoryTrim[4] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[4] - 1.0) ));
-    factoryTrim[5] = (float)(2620/1<<FS)*(pow( 1.01 , ((float)selfTest[5] - 1.0) ));
+    factoryTrim[0] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[0] - 1.0) )); 
+    factoryTrim[1] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[1] - 1.0) ));
+    factoryTrim[2] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[2] - 1.0) ));
+    factoryTrim[3] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[3] - 1.0) ));
+    factoryTrim[4] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[4] - 1.0) ));
+    factoryTrim[5] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[5] - 1.0) ));
     
     // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
     // To get percent, must multiply by 100
@@ -109,7 +109,6 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
         destination[i+3] = 100.0f*((float)(gSTAvg[i] - gAvg[i]))/factoryTrim[i+3] - 100.0f; // Report percent differences
     }
 }
-
 
 void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
 {
@@ -121,7 +120,10 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c_dev_t* i2c = (i2c_dev_t*)com;
 
     if (i2c->set_addr(i2c, self->super.device_addr) != 0)
-        return; // need panic!
+    {
+        printf("failed to set address to %p", self->super.device_addr);
+        return;
+    }
     // now we are ready to send data to mpu9250!
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0);// disable sleep mode 
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 1);// set clock source to x axis gyro
@@ -129,14 +131,17 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     usleep(40 * 1000);
     //check we are really commnuicate with mpu9250
     if (i2c->read_byte_reg(i2c, WHO_AM_I) != 0x71)
+    {
+        printf("device not respond!!\n");
         return;
+    }
 
     self_test(self, &test_result);
     printf("self test data percentage\n");
     printf("ax  ay  az  gx  gy  gz\n");
     for(int i = 0; i < 6; i++)
     {
-        printf("%f, ", test_result[i]);
+        printf("%f\t ", test_result[i]);
     }
     printf("\n");
     
@@ -174,7 +179,7 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
     return self;
 }
 
-void read_accel_data(mpu9250_t* self, accel_data_t* data)
+void read_accel_data(mpu9250_t* self, data_t* data)
 {
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
 
@@ -185,13 +190,14 @@ void read_accel_data(mpu9250_t* self, accel_data_t* data)
     acc[0] = (i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
     acc[1] = (i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
     acc[2] = (i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
-    data->a_x = (float)acc[0]*self->accel_res;
-    data->a_y = (float)acc[1]*self->accel_res;
-    data->a_z = (float)acc[2]*self->accel_res;
+    data->x = (float)acc[0] * self->accel_res;
+    data->y = (float)acc[1] * self->accel_res;
+    data->z = (float)acc[2] * self->accel_res;
 
 }
 
-void read_gyro_data(mpu9250_t* self, gyro_data_t* data)
+
+void read_gyro_data(mpu9250_t* self, data_t* data)
 {
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
     if(i2c->dev_addr != self->super.device_addr)
@@ -201,7 +207,7 @@ void read_gyro_data(mpu9250_t* self, gyro_data_t* data)
     gy[0] = (i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
     gy[1] = (i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
     gy[2] = (i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L));
-    data->g_x = (float)gy[0]*self->gyro_res;
-    data->g_y = (float)gy[1]*self->gyro_res;
-    data->g_z = (float)gy[2]*self->gyro_res;
+    data->x = (float)gy[0]*self->gyro_res;
+    data->y = (float)gy[1]*self->gyro_res;
+    data->z = (float)gy[2]*self->gyro_res;
 }

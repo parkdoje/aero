@@ -6,7 +6,7 @@
 
 
 typedef struct _sensor
-{//굳이 쓰레드를 써야할까 ..
+{
 	/* need more var?*/
 	pthread_mutex_t sensor_lock;
 	comm_device_t* comm;
