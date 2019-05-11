@@ -12,10 +12,9 @@ typedef struct serial_dev_t
     void (*data_flush)(struct serial_dev_t* self);
 }serial_dev_t;
 
-
+serial_dev_t* init_serial(const char* serial_name, int baudrate);
 int serial_open(const char*, int);
 void close_serial(struct comm_device*);
-
 void data_flush(serial_dev_t* self);
 
 int serial_read(serial_dev_t* self);

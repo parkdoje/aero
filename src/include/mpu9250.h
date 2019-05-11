@@ -10,10 +10,9 @@
 typedef struct data
 {
     int type;
-    float x;
-    float y;
-    float z;
-    time_t stamp;
+    float x, y, z;
+    struct timespec ts;
+    struct list_elem elem;
 }data_t;
 
 typedef struct mpu9250
@@ -27,7 +26,7 @@ typedef struct mpu9250
 
 mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate);
 struct list_elem* read_buffer(mpu9250_t* self);
-struct list_elem* write_buffer(mpu9250_t* self, data_t* data);
+void write_buffer(mpu9250_t* self, data_t* data);
 void read_accel_data(mpu9250_t* self, data_t* data);
 void read_gyro_data(mpu9250_t* self, data_t* data);
 

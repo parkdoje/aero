@@ -12,7 +12,7 @@
 
 
 
-serial_dev_t* init_serial(char* serial_name, int baudrate)
+serial_dev_t* init_serial(const char* serial_name, int baudrate) 
 {
 	comm_device_t* super = malloc(sizeof(serial_dev_t));
 	serial_dev_t* self = (serial_dev_t*)super;
@@ -29,7 +29,7 @@ serial_dev_t* init_serial(char* serial_name, int baudrate)
 
 	self->data_flush =data_flush;
 
-	return 0;
+	return self;
 }
 void close_serial(struct comm_device* self)
 {

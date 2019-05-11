@@ -19,7 +19,7 @@
 
 #ifndef NDEBUG
 #define ASSERT(CONDITION)                                       \
-        if (CONDITION) { } else {                               \
+        if (CONDITION) { /*do notthing!*/} else {                               \
                 PANIC ("assertion `%s' failed.", #CONDITION);   \
         }
 #else

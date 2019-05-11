@@ -1,14 +1,15 @@
-
-
 #include "../include/mpu9250.h"
 #include "../include/mpu9250_reg.h"
 #include "../lib/debug.h"
 #include "../lib/list.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
+
 
 // Accelerometer and gyroscope self test; check calibration wrt factory settings
 void self_test(mpu9250_t* self, float* destination) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
@@ -170,7 +171,7 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
     super->sensor_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
     super->rate = sample_rate;
     super->device_addr = MPU9250_ADDR;
-    
+
     self->accel_res = 4.0 / 32768.0f; /* need change*/
     self->gyro_res = 250.0 / 32768.0f;
 
@@ -181,6 +182,7 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
 
 void read_accel_data(mpu9250_t* self, data_t* data)
 {
+
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
 
     if(i2c->dev_addr != self->super.device_addr)
@@ -190,12 +192,12 @@ void read_accel_data(mpu9250_t* self, data_t* data)
     acc[0] = (i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
     acc[1] = (i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
     acc[2] = (i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
+
     data->x = (float)acc[0] * self->accel_res;
     data->y = (float)acc[1] * self->accel_res;
     data->z = (float)acc[2] * self->accel_res;
 
 }
-
 
 void read_gyro_data(mpu9250_t* self, data_t* data)
 {
@@ -206,8 +208,22 @@ void read_gyro_data(mpu9250_t* self, data_t* data)
     int16_t gy[3];
     gy[0] = (i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
     gy[1] = (i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
-    gy[2] = (i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L));
+    gy[2] = (i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L)); 
+
     data->x = (float)gy[0]*self->gyro_res;
     data->y = (float)gy[1]*self->gyro_res;
     data->z = (float)gy[2]*self->gyro_res;
 }
+
+struct list_elem* read_buffer(mpu9250_t* self)
+{
+    struct list* head = &(self->super.buffer_head);
+    return list_pop_front(head);
+}
+
+void write_buffer(mpu9250_t* self, data_t* data)
+{
+    struct list* head = &(self->super.buffer_head);
+
+}
+
