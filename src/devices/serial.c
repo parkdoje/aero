@@ -18,6 +18,11 @@ serial_dev_t* init_serial(const char* serial_name, int baudrate)
 	serial_dev_t* self = (serial_dev_t*)super;
 
 	super->fd = serial_open(serial_name, baudrate);
+	if(super->fd == -1)
+	{
+		printf("fd acquire failed\n");
+		exit(-1);
+	}
 	super->type = UART;
 	super->comm_lock =(pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 
@@ -28,12 +33,13 @@ serial_dev_t* init_serial(const char* serial_name, int baudrate)
 	super->write_nbyte = serial_nwrite;
 
 	self->data_flush =data_flush;
+	self->baud = baudrate;
 
 	return self;
 }
-void close_serial(struct comm_device* self)
+void close_serial(serial_dev_t* self)
 {
-	close(self->fd);
+	close(self->super.fd);
 	free(self);
 	self = NULL;
 }
@@ -114,5 +120,5 @@ void serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer)
 
 void data_flush(serial_dev_t* self)
 {
-	tcflush(self->super.fd, TCIOFLUSH);
+	tcflush(self->super.fd, TCIFLUSH);
 }
