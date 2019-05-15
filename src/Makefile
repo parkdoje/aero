@@ -1,22 +1,20 @@
 CC = gcc
 
-SRCS = serial.c
-OBJS = $(SRCS:%.c=$.o)
+SRCS = serial.c i2c.c list.c
 LIBS = -lpthread
 
 TARGET = rocket
 
 .SUFFIXES : .c .o
 
-all: $(TARGET)
-
-depend:
-		gccmakedep $(SRCS)
-
-$(TARGET) : $(OBJS)
-		$(CC) -o $@ $(OBJS)
+all: serial.o i2c.o 
 
 
-serial.o: serial.h serial.c
-	gcc -o serial.o serial.c
+serial.o: serial.c
+	$(CC) $(CFLAGS)-o serial.o serial.c
+
+i2c.o : i2c.c
+	$(CC) $CFLAGS -o i2c.o i2c.c 
+
+
 

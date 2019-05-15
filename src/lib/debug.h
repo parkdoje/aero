@@ -21,6 +21,7 @@
 #define ASSERT(CONDITION)                                       \
         if (CONDITION) { /*do notthing!*/} else {                               \
                 PANIC ("assertion `%s' failed.", #CONDITION);   \
+                exit(#CONDITION);               \
         }
 #else
 #define ASSERT(CONDITION) ((void) 0)

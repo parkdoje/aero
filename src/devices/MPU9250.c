@@ -14,8 +14,7 @@
 // Accelerometer and gyroscope self test; check calibration wrt factory settings
 void self_test(mpu9250_t* self, float* destination) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
 {
-    uint8_t rawData[6] = {0, 0, 0, 0, 0, 0};
-    uint8_t selfTest[6];
+    uint8_t self_test[6];
     int32_t gAvg[3] = {0}, aAvg[3] = {0}, aSTAvg[3] = {0}, gSTAvg[3] = {0};
     float factoryTrim[6];
     uint8_t FS = 0;
@@ -87,20 +86,20 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     
     // Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
 
-    selfTest[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL); // X-axis accel self-test results
-    selfTest[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL); // Y-axis accel self-test results
-    selfTest[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL); // Z-axis accel self-test results
-    selfTest[3] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);  // X-axis gyro self-test results
-    selfTest[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
-    selfTest[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
+    self_test[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL); // X-axis accel self-test results
+    self_test[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL); // Y-axis accel self-test results
+    self_test[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL); // Z-axis accel self-test results
+    self_test[3] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);  // X-axis gyro self-test results
+    self_test[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
+    self_test[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
 
     // Retrieve factory self-test value from self-test code reads
-    factoryTrim[0] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[0] - 1.0) )); 
-    factoryTrim[1] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[1] - 1.0) ));
-    factoryTrim[2] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[2] - 1.0) ));
-    factoryTrim[3] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[3] - 1.0) ));
-    factoryTrim[4] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[4] - 1.0) ));
-    factoryTrim[5] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[5] - 1.0) ));
+    factoryTrim[0] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[0] - 1.0) )); 
+    factoryTrim[1] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[1] - 1.0) ));
+    factoryTrim[2] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[2] - 1.0) ));
+    factoryTrim[3] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[3] - 1.0) ));
+    factoryTrim[4] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[4] - 1.0) ));
+    factoryTrim[5] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[5] - 1.0) ));
     
     // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
     // To get percent, must multiply by 100
@@ -129,6 +128,17 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0);// disable sleep mode 
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 1);// set clock source to x axis gyro
 
+    i2c->write_bit_reg(i2c, CONFIG, 5, 3, 0x00);// set no fsync
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0);// choose lpf bw and rate, at here use bw:250Hz, delay 0.97ms => gyro scope data output rate is almost 1kHz
+
+    i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate); // data output rate / 1 + samplerate 
+
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0); // set gyro range +- 250 deg /s 
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00); // choose lpf bw
+
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1);// set accel range +- 4g
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0);// use dlpf for accel 
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
     usleep(40 * 1000);
     //check we are really commnuicate with mpu9250
     if (i2c->read_byte_reg(i2c, WHO_AM_I) != 0x71)
@@ -148,17 +158,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     
 
 
-    i2c->write_bit_reg(i2c, CONFIG, 5, 3, 0x00);// set no fsync
-    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0);// choose lpf bw and rate, at here use bw:250Hz, delay 0.97ms => gyro scope data output rate is almost 1kHz
 
-    i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate); // data output rate / 1 + samplerate 
-
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0); // set gyro range +- 250 deg /s 
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00); // choose lpf bw
-
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1);// set accel range +- 4g
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0);// use dlpf for accel 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
 }
 
 mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
@@ -180,18 +180,24 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
     return self;
 }
 
+static inline void check_conn(mpu9250_t* self)
+{
+    i2c_dev_t* i2c = self->super.comm;
+    ASSERT(i2c->set_addr(i2c, self->super.device_addr) > -1);
+    ASSERT(i2c->read_byte_reg(i2c, WHO_AM_I) == 0x71);
+}
+
+
 void read_accel_data(mpu9250_t* self, data_t* data)
 {
-
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
 
-    if(i2c->dev_addr != self->super.device_addr)
-        ASSERT(i2c->set_addr(i2c, self->super.device_addr) > -1);
+    check_conn(self);
 
     int16_t acc[3];
-    acc[0] = (i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
-    acc[1] = (i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
-    acc[2] = (i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
+    acc[0] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
+    acc[1] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
+    acc[2] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
 
     data->x = (float)acc[0] * self->accel_res;
     data->y = (float)acc[1] * self->accel_res;
@@ -202,28 +208,36 @@ void read_accel_data(mpu9250_t* self, data_t* data)
 void read_gyro_data(mpu9250_t* self, data_t* data)
 {
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
-    if(i2c->dev_addr != self->super.device_addr)
-        ASSERT(i2c->set_addr(i2c, self->super.device_addr) > -1);
+
+    check_conn(self);
 
     int16_t gy[3];
-    gy[0] = (i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
-    gy[1] = (i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
-    gy[2] = (i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L)); 
+    gy[0] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
+    gy[1] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
+    gy[2] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L)); 
 
-    data->x = (float)gy[0]*self->gyro_res;
-    data->y = (float)gy[1]*self->gyro_res;
-    data->z = (float)gy[2]*self->gyro_res;
+    data->x = (float)gy[0];
+    data->y = (float)gy[1];
+    data->z = (float)gy[2];
 }
 
 struct list_elem* read_buffer(mpu9250_t* self)
 {
     struct list* head = &(self->super.buffer_head);
-    return list_pop_front(head);
+    int ern = pthread_mutex_trylock(&self->super.sensor_lock);//버퍼가 크기 때문에 조금 지연되어도 상관없음. 지연보다는 다른 기능들의 시간에 맞춘 실행이 더 중요
+    if (ern != 0)
+        return NULL;
+    struct list_elem* elem = list_pop_front(head);
+    pthread_mutex_unlock(&self->super.sensor_lock);
+    return elem;
+    
 }
 
 void write_buffer(mpu9250_t* self, data_t* data)
 {
     struct list* head = &(self->super.buffer_head);
-
+    int ern = pthread_mutex_lock(&self->super.sensor_lock); // debug purpose
+    list_push_back(head, &data->elem);
+    pthread_mutex_unlock(&self->super.sensor_lock);
+    return;
 }
-
