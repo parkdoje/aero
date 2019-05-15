@@ -16,7 +16,7 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
 {
     uint8_t self_test[6];
     int32_t gAvg[3] = {0}, aAvg[3] = {0}, aSTAvg[3] = {0}, gSTAvg[3] = {0};
-    int st_code[6] = {0};
+    float st_code[6] = {0};
     float factoryTrim[6];
     uint8_t FS = 0;
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
@@ -32,6 +32,10 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     i2c->write_byte_reg(i2c, GYRO_CONFIG, 0x00);
     i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, 0x02); 
     i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0x00); //set 2g only mode 
+
+    //SETTINg lpf
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2);
 
     for(int i = 0; i < 200; i++) 
     {  // get average current values of gyro and acclerometer
@@ -98,10 +102,10 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     
     for(int i = 0; i < 5; i++) //from the document 
     {
-        st_code[i] = (int)(
-            (log10(self_test[i] / 2620)) / 
+        st_code[i] = (float)(
+            (log10( (float)self_test[i] / 2620)) / 
                 log_val
-        ) + 1;
+        ) + 1.0;
     }
 
     // Retrieve factory self-test value from self-test code reads
