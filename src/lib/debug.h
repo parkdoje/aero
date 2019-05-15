@@ -1,7 +1,7 @@
 #ifndef __LIB_DEBUG_H
 #define __LIB_DEBUG_H
 #include <stdio.h>
-
+#include <stdlib.h>
 /* GCC lets us add "attributes" to functions, function
    parameters, etc. to indicate their properties.
    See the GCC manual for details. */
@@ -21,7 +21,7 @@
 #define ASSERT(CONDITION)                                       \
         if (CONDITION) { /*do notthing!*/} else {                               \
                 PANIC ("assertion `%s' failed.", #CONDITION);   \
-                exit(#CONDITION);               \
+                exit(-1);               \
         }
 #else
 #define ASSERT(CONDITION) ((void) 0)

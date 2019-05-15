@@ -34,8 +34,8 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0x00); //set 2g only mode 
 
     //SETTINg lpf
-    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2);
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2);
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2, false);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2, false);
 
     for(int i = 0; i < 200; i++) 
     {  // get average current values of gyro and acclerometer
@@ -137,20 +137,20 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
         return;
     }
     // now we are ready to send data to mpu9250!
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0);// disable sleep mode 
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 1);// set clock source to x axis gyro
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0, false);// disable sleep mode 
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 1, false);// set clock source to x axis gyro
 
-    i2c->write_bit_reg(i2c, CONFIG, 5, 3, 0x00);// set no fsync
-    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0);// choose lpf bw and rate, at here use bw:250Hz, delay 0.97ms => gyro scope data output rate is almost 1kHz
+    i2c->write_bit_reg(i2c, CONFIG, 5, 3, 0x00, false);// set no fsync
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0, false);// choose lpf bw and rate, at here use bw:250Hz, delay 0.97ms => gyro scope data output rate is almost 1kHz
 
     i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate); // data output rate / 1 + samplerate 
 
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0); // set gyro range +- 250 deg /s 
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00); // choose lpf bw
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0, false); // set gyro range +- 250 deg /s 
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, false); // choose lpf bw
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1);// set accel range +- 4g
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0);// use dlpf for accel 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1, false);// set accel range +- 4g
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0, false);// use dlpf for accel 
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0, false); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
     usleep(40 * 1000);
     //check we are really commnuicate with mpu9250
     if (i2c->read_byte_reg(i2c, WHO_AM_I) != 0x71)
