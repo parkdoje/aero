@@ -16,7 +16,6 @@ typedef struct comm_device // interface of communication devices
 {
 	int fd;
 	enum comm_type type;
-	pthread_mutex_t comm_lock;
 	int (*close_device)(struct comm_device* self);
 
 	int (*read_byte)(struct comm_device* self);

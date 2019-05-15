@@ -7,7 +7,6 @@
 
 typedef struct _sensor
 {
-	/* need more var?*/
 	pthread_mutex_t sensor_lock;
 	comm_device_t* comm;
 	struct list buffer_head;

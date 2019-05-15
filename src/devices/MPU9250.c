@@ -11,11 +11,12 @@
 #include <time.h>
 
 
-// Accelerometer and gyroscope self test; check calibration wrt factory settings
+// Accelerometer and xoscope self test; check calibration wrt factory settings
 void self_test(mpu9250_t* self, float* destination) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
 {
     uint8_t self_test[6];
     int32_t gAvg[3] = {0}, aAvg[3] = {0}, aSTAvg[3] = {0}, gSTAvg[3] = {0};
+    int st_code[6] = {0};
     float factoryTrim[6];
     uint8_t FS = 0;
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
@@ -29,8 +30,8 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     i2c->write_byte_reg(i2c, SMPLRT_DIV, 0x00);    // Set gyro sample rate to 1 kHz
     i2c->write_byte_reg(i2c, CONFIG, 0x02);
     i2c->write_byte_reg(i2c, GYRO_CONFIG, 0x00);
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, 0x02);
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0x00);
+    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, 0x02); 
+    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0x00); //set 2g only mode 
 
     for(int i = 0; i < 200; i++) 
     {  // get average current values of gyro and acclerometer
@@ -52,8 +53,8 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     }
     
     // Configure the accelerometer for self-test
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0xE0);//enable self test 
-    i2c->write_byte_reg(i2c, GYRO_CONFIG, 0xE0);// enable self test
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0x1);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3,0x1);
 
     usleep(25 * 1000); // wati for 25 ms
 
@@ -93,20 +94,28 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     self_test[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
     self_test[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
 
+    double log_val = log10(1.01);
+    
+    for(int i = 0; i < 5; i++) //from the document 
+    {
+        st_code[i] = (int)(
+            (log10(self_test[i] / 2620)) / 
+                log_val
+        ) + 1;
+    }
+
     // Retrieve factory self-test value from self-test code reads
-    factoryTrim[0] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[0] - 1.0) )); 
-    factoryTrim[1] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[1] - 1.0) ));
-    factoryTrim[2] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[2] - 1.0) ));
-    factoryTrim[3] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[3] - 1.0) ));
-    factoryTrim[4] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[4] - 1.0) ));
-    factoryTrim[5] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)self_test[5] - 1.0) ));
+    for(int i = 0; i < 5; i++)
+    {
+        factoryTrim[i] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)st_code[i] - 1.0) ));
+    }
     
     // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
     // To get percent, must multiply by 100
     for (int i = 0; i < 3; i++) 
     {
-        destination[i]   = 100.0f*((float)(aSTAvg[i] - aAvg[i]))/factoryTrim[i] - 100.0f;   // Report percent differences
-        destination[i+3] = 100.0f*((float)(gSTAvg[i] - gAvg[i]))/factoryTrim[i+3] - 100.0f; // Report percent differences
+        destination[i]   = 100.0f*((float)(aSTAvg[i] - aAvg[i]) - (float)factoryTrim[i] )/factoryTrim[i];   // Report percent differences
+        destination[i+3] = 100.0f*((float)(gSTAvg[i] - gAvg[i] - (float)factoryTrim[i + 3]))/factoryTrim[i+3]; // Report percent differences
     }
 }
 
@@ -136,7 +145,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0); // set gyro range +- 250 deg /s 
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00); // choose lpf bw
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1);// set accel range +- 4g
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, vi1);// set accel range +- 4g
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0);// use dlpf for accel 
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
     usleep(40 * 1000);
