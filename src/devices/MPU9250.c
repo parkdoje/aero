@@ -57,8 +57,8 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     }
     
     // Configure the accelerometer for self-test
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0x1);
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3,0x1);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 7, false);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 7, false);
 
     usleep(25 * 1000); // wati for 25 ms
 
@@ -79,6 +79,12 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
         gSTAvg[i] /= 200;
     } 
 
+    self_test[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL); // X-axis accel self-test results
+    self_test[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL); // Y-axis accel self-test results
+    self_test[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL); // Z-axis accel self-test results
+    self_test[3] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);  // X-axis gyro self-test results
+    self_test[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
+    self_test[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
     //restore original settings
 
     i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, accel_config_1);
@@ -89,18 +95,11 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
 
     usleep(25 * 1000);  // Delay a while to let the device stabilize
     
-    // Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
 
-    self_test[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL); // X-axis accel self-test results
-    self_test[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL); // Y-axis accel self-test results
-    self_test[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL); // Z-axis accel self-test results
-    self_test[3] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);  // X-axis gyro self-test results
-    self_test[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
-    self_test[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
 
     double log_val = log10(1.01);
     
-    for(int i = 0; i < 5; i++) //from the document 
+    for(int i = 0; i < 6; i++) //from the document 
     {
         st_code[i] = (float)(
             (log10( (float)self_test[i] / 2620)) / 
@@ -109,7 +108,7 @@ void self_test(mpu9250_t* self, float* destination) // Should return percent dev
     }
 
     // Retrieve factory self-test value from self-test code reads
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 6; i++)
     {
         factoryTrim[i] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)st_code[i] - 1.0) ));
     }
@@ -149,7 +148,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0); // set gyro range +- 250 deg /s 
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00); // choose lpf bw
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, vi1);// set accel range +- 4g
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1);// set accel range +- 4g
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0);// use dlpf for accel 
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
     usleep(40 * 1000);

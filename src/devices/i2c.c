@@ -19,7 +19,6 @@ i2c_dev_t* init_i2c(const char* device_name)
 	comm_device_t* super = (comm_device_t*)malloc(sizeof(i2c_dev_t));
 	i2c_dev_t* self = (i2c_dev_t*)super;
 	super->fd = fd;
-	super->comm_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	super->type = I2C;
 	super->read_byte = (
 		check_functions(super->fd, I2C_FUNC_SMBUS_READ_BYTE) 
@@ -163,11 +162,13 @@ int i2c_write_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffe
 	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &packet);
 }
 
-int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, uint8_t data)
+int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, uint8_t data, bool mode)
 {
 	ASSERT(len <= 8);
 	ASSERT(pos < 8);
 	uint8_t packet = self->read_byte_reg(self, reg);
+	if(!mode)
+		packet = 0x00;
 	uint8_t mask = ((1 << len) -1) << (pos - len + 1); 
 	/* 2**n - 1
 	 =
