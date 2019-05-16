@@ -105,8 +105,18 @@ bool self_test(mpu9250_t* self)
     }
     for (int i = 0;i < 3; i++)
     {
+        if(a_res[i] < 0.5 || a_res[i] >1.5)
+            return false;
+        if(g_res[i] < 0.5)
+            return false;
         printf("%d th  percentage is : a: %f g: %f \n", a_res[i] *100.0, g_res[i] * 100.0);
-    }       
+    }
+
+    i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate);
+    i2c->write_byte_reg(i2c, CONFIG, config);
+    i2c->write_byte_reg(i2c, GYRO_CONFIG, gyro_config);
+    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, accel_conf1);
+    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, accel_conf2);
     return true;
 }
 
@@ -150,17 +160,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
         return;
     }
 
-    self_test(self);
-    printf("self test data percentage\n");
-    printf("ax  ay  az  gx  gy  gz\n");
-    for(int i = 0; i < 6; i++)
-    {
-        printf("%f\t ", test_result[i]);
-    }
-    printf("\n");
-    
-
-
+    ASSERT(self_test(self));
 
 }
 
