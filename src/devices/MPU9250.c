@@ -12,115 +12,105 @@
 
 
 // Accelerometer and xoscope self test; check calibration wrt factory settings
-void self_test(mpu9250_t* self, float* destination) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
+bool self_test(mpu9250_t* self)
 {
-    uint8_t self_test[6];
-    int32_t gAvg[3] = {0}, aAvg[3] = {0}, aSTAvg[3] = {0}, gSTAvg[3] = {0};
-    float st_code[6] = {0};
-    float factoryTrim[6];
-    uint8_t FS = 0;
-    i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
-    
-    uint8_t sample_rate = i2c->read_byte_reg(i2c, SMPLRT_DIV);
-    uint8_t config = i2c->read_byte_reg(i2c, CONFIG);
-    uint8_t gyro_config = i2c->read_byte_reg(i2c, GYRO_CONFIG);
-    uint8_t accel_config_1 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_1);
-    uint8_t accel_config_2 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_2);
-    
-    i2c->write_byte_reg(i2c, SMPLRT_DIV, 0x00);    // Set gyro sample rate to 1 kHz
-    i2c->write_byte_reg(i2c, CONFIG, 0x02);
-    i2c->write_byte_reg(i2c, GYRO_CONFIG, 0x00);
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, 0x02); 
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, 0x00); //set 2g only mode 
+    i2c_dev_t* i2c = self->super.comm;
 
-    //SETTINg lpf
+    float a_sample[3] = {0.0}, g_sample[3] = {0.0}, a_st[3] = {0.0}, g_st[3] = {0.0}, a_str[3] = {0.0}, g_str[3] = {0.0};
+    float ast_val[3], gst_val[3], a_res[3] , g_res[3];
+    ASSERT(i2c->set_addr(i2c, self->super.device_addr) > -1);
+    uint8_t ast_data[3], gst_data[3];
+    
+    uint8_t sample_rate, config, gyro_config, accel_conf1, accel_conf2;
+
+    sample_rate = i2c->read_byte_reg(i2c, SMPLRT_DIV);
+    config = i2c->read_byte_reg(i2c, CONFIG);
+    gyro_config = i2c->read_byte_reg(i2c, GYRO_CONFIG);
+    accel_conf1 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_1);
+    accel_conf2 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_2);
+
     i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2, false);
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2, false);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0b00, false);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 3, 0b00, false);
 
-    for(int i = 0; i < 200; i++) 
-    {  // get average current values of gyro and acclerometer
-    
-        aAvg[0] = (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
-        aAvg[1] = (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
-        aAvg[2] = (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
-        
-        
-        gAvg[0] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
-        gAvg[1] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
-        gAvg[2] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L));
-    }
-    
-    for (int i =0; i < 3; i++) 
-    {  // Get average of 200 values and store as average current readings
-        aAvg[i] /= 200;
-        gAvg[i] /= 200;
-    }
-    
-    // Configure the accelerometer for self-test
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 7, false);
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 7, false);
-
-    usleep(25 * 1000); // wati for 25 ms
-
-    for(int i = 0; i < 200; i++) 
-    {  // get average self-test values of gyro and acclerometer
-        aSTAvg[0] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));  // Turn the MSB and LSB into a signed 16-bit value
-        aSTAvg[1] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
-        aSTAvg[2] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L)); 
-
-        gSTAvg[0] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L)); // Turn the MSB and LSB into a signed 16-bit value
-        gSTAvg[1] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L)); 
-        gSTAvg[2] += (int16_t)((int16_t)i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L));
-    }
-    
-    for (int i =0; i < 3; i++) 
-    {  // Get average of 200 values and store as average self-test readings
-        aSTAvg[i] /= 200;
-        gSTAvg[i] /= 200;
-    } 
-
-    self_test[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL); // X-axis accel self-test results
-    self_test[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL); // Y-axis accel self-test results
-    self_test[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL); // Z-axis accel self-test results
-    self_test[3] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);  // X-axis gyro self-test results
-    self_test[4] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);  // Y-axis gyro self-test results
-    self_test[5] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);  // Z-axis gyro self-test results
-    //restore original settings
-
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, accel_config_1);
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, accel_config_2);
-    i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate);
-    i2c->write_byte_reg(i2c, CONFIG, config);
-    i2c->write_byte_reg(i2c, GYRO_CONFIG, gyro_config);
-
-    usleep(25 * 1000);  // Delay a while to let the device stabilize
-    
-
-
-    double log_val = log10(1.01);
-    
-    for(int i = 0; i < 6; i++) //from the document 
+    for(int i = 0; i < 200; i++)
     {
-        st_code[i] = (float)(
-            (log10( (float)self_test[i] / 2620)) / 
-                log_val
-        ) + 1.0;
-    }
+        a_sample[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_XOUT_L)));
+        a_sample[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_YOUT_L)));
+        a_sample[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_ZOUT_L)));
 
-    // Retrieve factory self-test value from self-test code reads
-    for(int i = 0; i < 6; i++)
-    {
-        factoryTrim[i] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)st_code[i] - 1.0) ));
+        g_sample[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
+        g_sample[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
+        g_sample[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
     }
     
-    // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
-    // To get percent, must multiply by 100
-    for (int i = 0; i < 3; i++) 
+    for(int i = 0; i < 3; i++)
     {
-        destination[i]   = 100.0f*((float)(aSTAvg[i] - aAvg[i]) - (float)factoryTrim[i] )/factoryTrim[i];   // Report percent differences
-        destination[i+3] = 100.0f*((float)(gSTAvg[i] - gAvg[i] - (float)factoryTrim[i + 3]))/factoryTrim[i+3]; // Report percent differences
+        a_sample[i] /= 200.0;
+        g_sample[i] /= 200.0;
     }
+
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b111, false);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b111, false);
+
+
+
+    usleep(40*1000);
+
+    for(int i = 0; i < 200; i++)
+    {
+        a_st[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_XOUT_L)));
+        a_st[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_YOUT_L)));
+        a_st[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, ACCEL_ZOUT_L)));
+
+        g_st[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
+        g_st[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
+        g_st[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
+    }
+
+     for(int i = 0; i < 3; i++)
+    {
+        a_st[i] /= 200.0;
+        g_st[i] /= 200.0;
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        a_str[i] = a_st[i] - a_sample[i];
+        g_str[i] = g_st[i] - g_sample[i];
+    }
+
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b000, false);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b000, false);
+
+    ast_data[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL);
+    ast_data[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL);
+    ast_data[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL);
+
+    gst_data[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_GYRO);
+    gst_data[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_GYRO);
+    gst_data[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_GYRO);
+
+    for(int i = 0; i < 3; i++)
+    {
+        ast_val[i] = (float)(2620.0) * powf(1.01, ast_data[i] - 1);
+        gst_val[i] = (float)(2620.0) * powf(1.01, gst_data[i] - 1);
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        a_res[i] = a_str[i] / ast_val[i];
+        g_res[i] = g_str[i] / gst_val[i];
+    }
+    for (int i = 0;i < 3; i++)
+    {
+        printf("%d th  percentage is : a: %f g: %f \n", a_res[i] *100.0, g_res[i] * 100.0);
+    }       
+    return true;
 }
+
+
 
 void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
 {
@@ -148,18 +138,19 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0, false); // set gyro range +- 250 deg /s 
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, false); // choose lpf bw
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 1, false);// set accel range +- 4g
+    i2c->write_bit_reg(i2c, 1, 4, 2, 1, false);// set accel range +- 4g
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0, false);// use dlpf for accel 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0, false); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hz
-    usleep(40 * 1000);
-    //check we are really commnuicate with mpu9250
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0, false); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hza
+
+    usleep(40 * 1000); 
+//check we are really commnuicate with mpu9250
     if (i2c->read_byte_reg(i2c, WHO_AM_I) != 0x71)
     {
         printf("device not respond!!\n");
         return;
     }
 
-    self_test(self, &test_result);
+    self_test(self);
     printf("self test data percentage\n");
     printf("ax  ay  az  gx  gy  gz\n");
     for(int i = 0; i < 6; i++)
