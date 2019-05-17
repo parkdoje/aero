@@ -7,7 +7,7 @@
 int main()
 {
     i2c_dev_t* i2c = init_i2c("/dev/i2c-1");
-    mpu9250_t* mpu = init_mpu9250(i2c, 0x04);
+    mpu9250_t* mpu = init_mpu9250(i2c, 0);
     data_t acc;
     data_t gy;
     while(1)

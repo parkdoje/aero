@@ -167,7 +167,7 @@ int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, ui
 	ASSERT(len <= 8);
 	ASSERT(pos < 8);
 	uint8_t packet = self->read_byte_reg(self, reg);
-	if(!mode)
+	if(mode)
 		packet = 0x00;
 	uint8_t mask = ((1 << len) -1) << (pos - len + 1); 
 	/* 2**n - 1
@@ -194,7 +194,7 @@ int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, ui
 		1111 0001 => erase 3bit !
 	*/
 
-	packet |= (data) << (pos - len + 1);
+	packet |= ((data) << (pos - len + 1));
 	
 	return self->write_byte_reg(self, reg, packet);
 }
