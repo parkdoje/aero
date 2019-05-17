@@ -29,10 +29,17 @@ bool self_test(mpu9250_t* self)
     accel_conf1 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_1);
     accel_conf2 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_2);
 
+    //setting a low pass filter
     i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2, false);
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2, false);
+
+    //set fchoice bit
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b11, false);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0b1, false);
+
+
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0b00, false);
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 3, 0b00, false);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b00, false);
 
     for(int i = 0; i < 200; i++)
     {
@@ -43,6 +50,7 @@ bool self_test(mpu9250_t* self)
         g_sample[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
         g_sample[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
         g_sample[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
+        usleep(1000);
     }
     
     for(int i = 0; i < 3; i++)
@@ -67,6 +75,7 @@ bool self_test(mpu9250_t* self)
         g_st[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
         g_st[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
         g_st[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
+        usleep(1000);
     }
 
      for(int i = 0; i < 3; i++)
@@ -84,6 +93,8 @@ bool self_test(mpu9250_t* self)
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b000, false);
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b000, false);
 
+    usleep(40 * 1000);
+
     ast_data[0] = i2c->read_byte_reg(i2c, SELF_TEST_X_ACCEL);
     ast_data[1] = i2c->read_byte_reg(i2c, SELF_TEST_Y_ACCEL);
     ast_data[2] = i2c->read_byte_reg(i2c, SELF_TEST_Z_ACCEL);
@@ -94,8 +105,8 @@ bool self_test(mpu9250_t* self)
 
     for(int i = 0; i < 3; i++)
     {
-        ast_val[i] = (float)(2620.0) * powf(1.01, ast_data[i] - 1);
-        gst_val[i] = (float)(2620.0) * powf(1.01, gst_data[i] - 1);
+        ast_val[i] = (float)(2620.0) * powf(1.01, (float)ast_data[i] - 1.0);
+        gst_val[i] = (float)(2620.0) * powf(1.01, (float)gst_data[i] - 1.0);
     }
 
     for(int i = 0; i < 3; i++)
@@ -105,13 +116,11 @@ bool self_test(mpu9250_t* self)
     }
     for (int i = 0;i < 3; i++)
     {
-        if(a_res[i] < 0.5 || a_res[i] >1.5)
-            return false;
         if(g_res[i] < 0.5)
             return false;
-        printf("%d th  percentage is : a: %f g: %f \n", a_res[i] *100.0, g_res[i] * 100.0);
+        printf("%d th  percentage is : a: %f g: %f \n", a_res[i], g_res[i]);
     }
-
+    //restore original setting
     i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate);
     i2c->write_byte_reg(i2c, CONFIG, config);
     i2c->write_byte_reg(i2c, GYRO_CONFIG, gyro_config);
@@ -136,9 +145,15 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
         printf("failed to set address to %p", self->super.device_addr);
         return;
     }
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 7, 1, 1, false);
+    usleep(50*1000);
     // now we are ready to send data to mpu9250!
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0, false);// disable sleep mode 
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 1, false);// set clock source to x axis gyro
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 0b000, false);// set clock source to x axis gyro
+    i2c->write_bit_reg(i2c, PWR_MGMT_2, 5, 6, 0b000000, false);// turn on gyro and accel
+    i2c->write_byte_reg(i2c, FIFO_EN, 0x00);
+
+
 
     i2c->write_bit_reg(i2c, CONFIG, 5, 3, 0x00, false);// set no fsync
     i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0, false);// choose lpf bw and rate, at here use bw:250Hz, delay 0.97ms => gyro scope data output rate is almost 1kHz
@@ -146,11 +161,11 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate); // data output rate / 1 + samplerate 
 
     i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0, false); // set gyro range +- 250 deg /s 
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, false); // choose lpf bw
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b11, false); // choose lpf bw
 
     i2c->write_bit_reg(i2c, 1, 4, 2, 1, false);// set accel range +- 4g
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 0, false);// use dlpf for accel 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 0, false); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hza
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 1, 1, false);// use dlpf for accel 
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2, false); // dlpf rate set as bw = 218Hz, delay = 1.88ms => data output rate is about 200Hza
 
     usleep(40 * 1000); 
 //check we are really commnuicate with mpu9250
