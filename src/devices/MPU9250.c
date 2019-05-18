@@ -151,34 +151,22 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 7, 1, 1, false);
     usleep(100*1000);
 
-    packet = 0x00;
-    packet = make_pkt(packet, 0, 6, 1);
-    packet = make_pkt(packet, 0b001, 2, 3);
-
-    i2c->write_byte_reg(i2c, PWR_MGMT_1, packet);
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0b0, true);
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 0b001, true);
 
     i2c->write_bit_reg(i2c, PWR_MGMT_2, 5, 6, 0b000000, true);// turn on gyro and accel
 
-    packet = 0x00;
-    packet = make_pkt(i2c->read_byte_reg(i2c, CONFIG), 0b0000, 6, 4);// no FIFO, no fsync sample
-    i2c->write_byte_reg(i2c, CONFIG, packet);
+    i2c->write_bit_reg(i2c, CONFIG, 2, 1, 1, true);
+    i2c->write_byte_reg(i2c, SMPLRT_DIV, 0x00); // data output rate / 1 + samplerate 
 
-    i2c->write_byte_reg(i2c, SMPLRT_DIV, sample_rate); // data output rate / 1 + samplerate 
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b000, true);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0b00, true);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, true);
 
-    packet = 0x00;
-    packet = make_pkt(i2c->read_byte_reg(i2c, GYRO_CONFIG), 0b00, 4, 2);// gyro range = 250 dps
-    packet = make_pkt(packet, 0b00, 1, 2); // fchoice_b = 0b00
-    i2c->write_byte_reg(i2c, GYRO_CONFIG, packet);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b000, true);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b01, true);
 
-    packet = 0x00;
-    packet = make_pkt(i2c->read_byte_reg(i2c, ACCEL_CONFIG_1), 0b01, 4, 2); // set accel range 4g
-    packet = make_pkt(packet, 0b000, 7, 3);//not a self test
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_1, packet);
-
-    packet = 0x00;
-    packet = make_pkt(i2c->read_byte_reg(i2c, ACCEL_CONFIG_2), 0b0, 3, 1);  
-    packet = make_pkt(packet, 0b010, 2, 3);
-    i2c->write_byte_reg(i2c, ACCEL_CONFIG_2, packet);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 4, 0b0010, true);
 
     usleep(40 * 1000); 
 //check we are really commnuicate with mpu9250
