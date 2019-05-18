@@ -36,6 +36,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "lps25h.h"
+#include "pressure.h"
 
 /** @addtogroup BSP
  * @{

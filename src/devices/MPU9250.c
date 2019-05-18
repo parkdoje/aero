@@ -164,6 +164,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b01, true);
 
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 4, 0b0010, true);
+    i2c->write_byte_reg(i2c, FIFO_EN, 0x00);
 
 
     usleep(40 * 1000); 
