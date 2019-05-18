@@ -16,7 +16,7 @@ typedef struct _i2c_device_t
     int (*read_byte_reg)(struct _i2c_device_t* self, uint8_t reg);
     int (*read_nbyte_reg)(struct _i2c_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 
-    int (*write_bit_reg)(struct _i2c_device_t*, uint8_t reg, uint8_t position, uint8_t len, uint8_t data, bool mode); // true : erase value, false: maintain value
+    int (*write_bit_reg)(struct _i2c_device_t*, uint8_t reg, uint8_t position, uint8_t len, uint8_t data, bool mode); // true : maintain value, false: erase value
     int (*write_byte_reg)(struct _i2c_device_t* self, uint8_t reg, uint8_t data);
     int (*write_nbyte_reg)(struct _i2c_device_t* self, uint8_t reg, size_t len, uint8_t* buffer);
 }i2c_dev_t;
@@ -24,6 +24,7 @@ typedef struct _i2c_device_t
 i2c_dev_t* init_i2c(const char* device_name);
 
 int open_device(const char* device_name);
+uint8_t make_pkt(uint8_t orig, uint8_t data, uint8_t pos, uint8_t len);
 int close_device(i2c_dev_t* self);
 static int check_functions(int fd, unsigned int func_code);
 int set_address(i2c_dev_t* self, int addr);

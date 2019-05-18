@@ -23,7 +23,13 @@
                 PANIC ("assertion `%s' failed.", #CONDITION);   \
                 exit(-1);               \
         }
+
+#define PRINT(POSITION, BYTE) \
+        do{                     \
+                printf("%s %d\n", #POSITION, #BYTE); \
+        }while(0);
 #else
 #define ASSERT(CONDITION) ((void) 0)
+#define PRINT(POSITION, BYTE) ((void) 0)
 #endif /* lib/debug.h */
 

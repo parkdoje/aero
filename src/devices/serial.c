@@ -24,7 +24,6 @@ serial_dev_t* init_serial(const char* serial_name, int baudrate)
 		exit(-1);
 	}
 	super->type = UART;
-	super->comm_lock =(pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 
 	super->read_byte = serial_read;
 	super->read_nbyte = serial_nread;
