@@ -10,7 +10,6 @@
 #include <string.h>
 #include <time.h>
 
-
 // Accelerometer and xoscope self test; check calibration wrt factory settings
 bool self_test(mpu9250_t* self)
 {
@@ -31,7 +30,7 @@ bool self_test(mpu9250_t* self)
     accel_conf2 = i2c->read_byte_reg(i2c, ACCEL_CONFIG_2);
 
     //setting a low pass filter
-    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2, false);
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 2, true);//trouble point
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 2, 3, 2, false);
 
     //set fchoice bit
@@ -51,7 +50,6 @@ bool self_test(mpu9250_t* self)
         g_sample[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
         g_sample[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
         g_sample[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
-        usleep(1000);
     }
     
     for(int i = 0; i < 3; i++)
@@ -76,7 +74,6 @@ bool self_test(mpu9250_t* self)
         g_st[0] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_XOUT_L)));
         g_st[1] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_YOUT_L)));
         g_st[2] += (float)((int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 |i2c->read_byte_reg(i2c, GYRO_ZOUT_L)));
-        usleep(1000);
     }
 
      for(int i = 0; i < 3; i++)
@@ -147,8 +144,8 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
         printf("failed to set address to %p", self->super.device_addr);
         return;
     }
-    //reset device
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 7, 1, 1, false);
+    
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 7, 1, 1, false); //reset device
     usleep(100*1000);
 
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0b0, true);
@@ -167,6 +164,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b01, true);
 
     i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 4, 0b0010, true);
+
 
     usleep(40 * 1000); 
 //check we are really commnuicate with mpu9250

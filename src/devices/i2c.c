@@ -147,7 +147,7 @@ int i2c_write_byte_reg(i2c_dev_t* self, uint8_t reg, uint8_t data)
 
 	packet.byte = data;
 
-	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &packet);
+	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BYTE_DATA, &packet);
 }
 
 int i2c_write_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffer)

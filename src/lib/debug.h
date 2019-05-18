@@ -23,6 +23,7 @@
                 PANIC ("assertion `%s' failed.", #CONDITION);   \
                 exit(-1);               \
         }
+        
 #define PRINT(POSITION, BYTE) \
         do{                     \
                 printf("%s %p\n", #POSITION, #BYTE); \
