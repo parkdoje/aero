@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
  
-void rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
+int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
 {   
     //critical section start
     pthread_mutex_lock(&self->rcv_lock);
@@ -11,10 +11,10 @@ void rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
     if (self->rcv_count == 0)
     {
         pthread_mutex_unlock(&self->rcv_lock);
-        return NULL; // buffer has to be empty
+        return -1;// no received message
     }
 
-    ASSERT(!list_empty(&self->rcv));
+    ASSERT(!list_empty(&self->rcv));// rcv count != 0 => list must filled
     
     struct list_elem* e = list_pop_front(&self->rcv);
     self->rcv_count -= 1;    
@@ -29,10 +29,10 @@ void rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
     free(packet);
 
     packet = NULL;
-    return;
+    return 0;
 }
 
-int snd_msg(rfdev_t* self, mavlink_message_t* data)// data must not be a heap memory, use by main thread
+void snd_msg(rfdev_t* self, mavlink_message_t* data)// data must not be a heap memory, use by main thread
 {
     packet_t* packet = malloc(sizeof(packet_t));
     mavlink_message_t* _msg = malloc(sizeof(mavlink_message_t));
@@ -52,7 +52,7 @@ int snd_msg(rfdev_t* self, mavlink_message_t* data)// data must not be a heap me
     return 0;
 }
 
-static void read_snd_msg(rfdev_t* self, mavlink_message_t* dest)//from comm thread
+static int read_snd_msg(rfdev_t* self, mavlink_message_t* dest)//from comm thread
 {
     packet_t* packet = NULL;
     struct list_elem* e = NULL;
@@ -63,7 +63,7 @@ static void read_snd_msg(rfdev_t* self, mavlink_message_t* dest)//from comm thre
     if(self->snd_count == 0)
     {
         pthread_mutex_unlock(&self->snd_lock);
-        return;
+        return -1;
     }
     ASSERT(!list_empty(&self->rcv));
 
@@ -80,9 +80,9 @@ static void read_snd_msg(rfdev_t* self, mavlink_message_t* dest)//from comm thre
     free(packet);
     packet = NULL;
     
-    return;
+    return 0;
 }
-static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd)//rcvd must not be a heap mem!
+static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd)//rcvd must not be a heap mem, if heap, it will not freed
 {
     //use by communication thread
     packet_t* packet = malloc(sizeof(packet_t));
@@ -90,7 +90,7 @@ static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd)//rcvd must not
 
     memcpy(_msg, rcvd, sizeof(mavlink_message_t));
     packet->msg = _msg;
-    
+
     //critical section start
     pthread_mutex_lock(&self->rcv_lock); // msg received from telemetry;
 

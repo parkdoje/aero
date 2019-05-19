@@ -23,17 +23,20 @@ typedef struct rfdev
     uint16_t rcv_count, snd_count;// scheduling purpose
 
     //wrapper for comm device
-    mavlink_message_t* (*rcv_msg)(struct rfdev* self);
-    int (*snd_msg)(struct rfdev* self, mavlink_message_t* data);
+    int (*rcv_msg)(struct rfdev* self);
+    void (*snd_msg)(struct rfdev* self, mavlink_message_t* data);
 }rfdev_t;
+
+
 
 
 //rfdev_t may or may not be a heap memory
 //use by main thread, argument pointer need not be a heap memory
-void rcv_msg(rfdev_t* self, mavlink_message_t* dest);
-int snd_msg(rfdev_t* self, mavlink_message_t* data);
-
+int rcv_msg(rfdev_t* self, mavlink_message_t* dest);
+void snd_msg(rfdev_t* self, mavlink_message_t* data);
 
 //use by comm thread, argument pointer need not be a heap memory
-static void read_snd_msg(rfdev_t* self, mavlink_message_t* dest);
+static int read_snd_msg(rfdev_t* self, mavlink_message_t* dest);
 static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd);
+
+void snd_to_rf(rfdev_t* self);
