@@ -129,7 +129,7 @@ bool self_test(mpu9250_t* self)
 
 
 
-void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
+static void _init_mpu9250(mpu9250_t* self)
 {
     comm_device_t* com = self->super.comm;
     uint8_t packet = 0x00;
@@ -148,27 +148,30 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     i2c->write_bit_reg(i2c, PWR_MGMT_1, 7, 1, 1, false); //reset device
     usleep(100*1000);
 
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0b0, true);
-    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 0b001, true);
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 6, 1, 0b0, true);// turn off sleep mode 
+    i2c->write_bit_reg(i2c, PWR_MGMT_1, 2, 3, 0b001, true);// select automatic clock source
 
     i2c->write_bit_reg(i2c, PWR_MGMT_2, 5, 6, 0b000000, true);// turn on gyro and accel
 
-    i2c->write_bit_reg(i2c, CONFIG, 2, 1, 1, true);
+    i2c->write_bit_reg(i2c, CONFIG, 2, 3, 0b010, true); //select gyro low pass filter range
     i2c->write_byte_reg(i2c, SMPLRT_DIV, 0x00); // data output rate / 1 + samplerate 
 
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b000, true);
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0b00, true);
-    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, true);
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 7, 3, 0b000, true);// disable self test mode
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 4, 2, 0b00, true);// select gyro scale 250dps(degree per second)
+    i2c->write_bit_reg(i2c, GYRO_CONFIG, 1, 2, 0b00, true);// select fchoice_b, in this case we will use lpf
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b000, true);
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b01, true);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 7, 3, 0b000, true);//disable  self test mode
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_1, 4, 2, 0b01, true);// select accel scale, +-4g
 
-    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 4, 0b0010, true);
-    i2c->write_byte_reg(i2c, FIFO_EN, 0x00);
+    i2c->write_bit_reg(i2c, ACCEL_CONFIG_2, 3, 4, 0b0010, true);// select fchoice_b and accel lpf range
+
+    i2c->write_bit_reg(i2c, USER_CTRL, 6, 1, 0, true);//disable fifo
+    i2c->write_bit_reg(i2c, USER_CTRL, 5, 1, 0, true);//disable i2c_mst function 
+    i2c->write_byte_reg(i2c, FIFO_EN, 0x00);//disable fifo for all 
 
 
     usleep(40 * 1000); 
-//check we are really commnuicate with mpu9250
+    //check we are really commnuicate with mpu9250
     if (i2c->read_byte_reg(i2c, WHO_AM_I) != 0x71)
     {
         printf("device not respond!!\n");
@@ -182,7 +185,7 @@ void _init_mpu9250(mpu9250_t* self, uint8_t sample_rate)
     return;
 }
 
-mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
+mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate, uint8_t accel_scale, uint8_t gyro_scale)
 {
     mpu9250_t* self = malloc(sizeof(mpu9250_t));
     sensor_t* super = &self->super;
@@ -193,10 +196,46 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate)
     super->rate = sample_rate;
     super->device_addr = MPU9250_ADDR;
 
-    self->accel_res = 4.0 / 32768.0f; /* need change*/
-    self->gyro_res = 250.0 / 32768.0f;
+    switch (accel_scale)
+    {
+        case 2:
+            self->accel_res = 2.0f / 32768.0f;
+            break;
+        case 4:
+            self->accel_res = 4.0f / 32768.0f;
+            break;
+        case 8:
+            self->accel_res = 8.0f / 32768.0f;
+            break;
+        case 16:
+            self->accel_res = 16.0f / 32768.0f;
+            break;
+        default:
+            printf("out of accel range, setting to default 2g\n");
+            self->accel_res = 2.0f / 32768.0f;
+            break;
+    }
+    switch (gyro_scale)
+    {
+        case 250:
+            self->accel_res = 250.0f / 32768.0f;
+            break;
+        case 500:
+            self->accel_res = 500.0f / 32768.0f;
+            break;
+        case 1000:
+            self->accel_res = 1000.0f / 32768.0f;
+            break;
+        case 2000:
+            self->accel_res = 2000.0f / 32768.0f;
+            break;
+        default:
+            printf("out of gyro range, setting to default 250 dps\n");
+            self->accel_res = 250.0f / 32768.0f;
+            break;
+    }
 
-    _init_mpu9250(self, sample_rate);
+    _init_mpu9250(self);
 
     return self;
 }
@@ -214,11 +253,17 @@ void read_accel_data(mpu9250_t* self, data_t* data)
     i2c_dev_t* i2c = (i2c_dev_t*)self->super.comm;
 
     check_conn(self);
-
+    struct timespec _ts;
     int16_t acc[3];
     acc[0] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_XOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_XOUT_L));
     acc[1] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
     acc[2] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
+
+    clock_gettime(CLOCK_REALTIME_COARSE, &_ts);
+
+    data->type = ACCEL;
+    data->ts.tv_sec = _ts.tv_sec;
+    data->ts.tv_nsec = _ts.tv_nsec;
 
     data->x = (float)acc[0] * self->accel_res;
     data->y = (float)acc[1] * self->accel_res;
@@ -233,19 +278,26 @@ void read_gyro_data(mpu9250_t* self, data_t* data)
     check_conn(self);
 
     int16_t gy[3];
+    struct timespec _ts;
     gy[0] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_XOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_XOUT_L));
     gy[1] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
     gy[2] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L)); 
+
+    clock_gettime(CLOCK_REALTIME_COARSE, &_ts);
+
+    data->type = GYRO;
+    data->ts.tv_sec = _ts.tv_sec;
+    data->ts.tv_nsec = _ts.tv_nsec;
 
     data->x = (float)gy[0]* self->gyro_res;
     data->y = (float)gy[1]* self->gyro_res;
     data->z = (float)gy[2]* self->gyro_res;
 }
 
-struct list_elem* read_buffer(mpu9250_t* self)
+struct list_elem* read_buffer(mpu9250_t* self)//need revise
 {
     struct list* head = &(self->super.buffer_head);
-    int ern = pthread_mutex_trylock(&self->super.sensor_lock);//버퍼가 크기 때문에 조금 지연되어도 상관없음. 지연보다는 다른 기능들의 시간에 맞춘 실행이 더 중요
+    int ern = pthread_mutex_trylock(&self->super.sensor_lock);//buffer is big enough, no need to care about read
     if (ern != 0)
         return NULL;
     struct list_elem* elem = list_pop_front(head);
