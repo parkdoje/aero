@@ -24,7 +24,6 @@ typedef struct _i2c_device_t
 i2c_dev_t* init_i2c(const char* device_name);
 
 int open_device(const char* device_name);
-uint8_t make_pkt(uint8_t orig, uint8_t data, uint8_t pos, uint8_t len);
 int close_device(i2c_dev_t* self);
 static int check_functions(int fd, unsigned int func_code);
 int set_address(i2c_dev_t* self, int addr);

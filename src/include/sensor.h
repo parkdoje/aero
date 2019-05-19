@@ -10,6 +10,7 @@ typedef struct _sensor
 	pthread_mutex_t sensor_lock;
 	comm_device_t* comm;
 	struct list buffer_head;
+	unsigned int buf_cnt;
 	int device_addr;
 	unsigned int rate;
 

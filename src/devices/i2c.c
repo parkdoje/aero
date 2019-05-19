@@ -162,40 +162,7 @@ int i2c_write_nbyte_reg(i2c_dev_t* self, uint8_t reg, size_t len, uint8_t* buffe
 	return i2c_access(self->super.fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &packet);
 }
 
-uint8_t make_pkt(uint8_t orig, uint8_t data, uint8_t pos, uint8_t len)
-{
-	ASSERT(len <= 8);
-	ASSERT(pos < 8);
-	uint8_t packet = orig;
-	uint8_t mask = ((1 << len) -1) << (pos - len + 1); 
-	/* 2**n - 1
-	 =
-	 ....0 1 	1 	1 	1 ...
-	     n n-1	n-2 n-3   ...
 
-	ex 
-		1111 1011 = original data 
-		0000 0111 = mask
-		3 = position 
-		3 = len 
-		we need to move 3rd bit just 1 time to left 		
-	*/
-
-	packet &= ~(mask);
-	/*
-		ex 
-		1111 1011 = original
-		~(0000 1110) = mask 
-		1111 0001 = ~mask
-
-		orignal & ~mask =
-		1111 0001 => erase 3bit !
-	*/
-
-	packet |= ((data) << (pos - len + 1));
-
-	return packet;
-}
 
 int i2c_write_bit_reg(i2c_dev_t* self, uint8_t reg, uint8_t pos, uint8_t len, uint8_t data, bool mode)
 {
