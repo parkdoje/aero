@@ -293,24 +293,3 @@ void read_gyro_data(mpu9250_t* self, data_t* data)
     data->y = (float)gy[1]* self->gyro_res;
     data->z = (float)gy[2]* self->gyro_res;
 }
-
-struct list_elem* read_buffer(mpu9250_t* self)//need revise
-{
-    struct list* head = &(self->super.buffer_head);
-    int ern = pthread_mutex_trylock(&self->super.sensor_lock);//buffer is big enough, no need to care about read
-    if (ern != 0)
-        return NULL;
-    struct list_elem* elem = list_pop_front(head);
-    pthread_mutex_unlock(&self->super.sensor_lock);
-    return elem;
-    
-}
-
-void write_buffer(mpu9250_t* self, data_t* data)
-{
-    struct list* head = &(self->super.buffer_head);
-    int ern = pthread_mutex_lock(&self->super.sensor_lock); // debug purpose
-    list_push_back(head, &data->elem);
-    pthread_mutex_unlock(&self->super.sensor_lock);
-    return;
-}
