@@ -39,4 +39,5 @@ void snd_msg(rfdev_t* self, mavlink_message_t* data);
 static int read_snd_msg(rfdev_t* self, mavlink_message_t* dest);
 static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd);
 
-void snd_to_rf(rfdev_t* self);
+static int snd_to_rf(rfdev_t* self);
+static int rcv_frm_rf(rfdev_t* self);

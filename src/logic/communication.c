@@ -102,4 +102,47 @@ static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd)//rcvd must not
     return;
 }
 
+static int snd_to_rf(rfdev_t* self)
+{
+    mavlink_message_t msg;
+    serial_dev_t* uart = self->comm;
+    
+    int stat = read_snd_msg(self, &msg);
+
+    uint8_t msg_arr[MAVLINK_MAX_PACKET_LEN];
+    uint16_t len = mavlink_msg_to_send_buffer(&msg_arr, &msg);
+
+    if(stat == -1)
+    {
+        return 0;//no more packet to send;
+    }
+
+    return uart->super.write_nbyte((comm_device_t*)self, len, &msg_arr);
+}
+
+static int rcv_frm_rf(rfdev_t* self)
+{
+    mavlink_message_t tmp_msg;
+    mavlink_status_t status;
+    serial_dev_t* uart = (serial_dev_t*)self->comm;
+    uint8_t ch;
+    uint8_t stat;
+
+    while((ch = uart->super.read_byte(uart)) > 0)
+    {
+        stat = mavlink_parse_char(0, ch, &tmp_msg, &status);
+        if (stat)
+        {
+            if(stat == MAVLINK_FRAMING_BAD_CRC)
+            {
+                break;//ERROR!! discard packet 
+            }
+
+            write_rcv_msg(self, &tmp_msg);
+            break;
+        }
+    }
+    
+    return 0;
+}
 
