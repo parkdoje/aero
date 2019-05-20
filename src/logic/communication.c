@@ -3,6 +3,27 @@
 #include <stdlib.h>
 #include <string.h>
  
+rfdev_t* init_rf_comm(serial_dev_t* uart, uint8_t com_code)
+{
+
+    rfdev_t* rf = malloc(sizeof(rfdev_t));
+
+    rf->comm = (comm_device_t*)uart;
+    ASSERT(rf->comm->type == com_code);
+
+    list_init(&rf->rcv);
+    list_init(&rf->snd);
+    rf->snd_count = rf->rcv_count = 0;
+
+    rf->rcv_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    rf->snd_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    
+    rf->snd_msg = snd_msg;
+    rf->rcv_msg = rcv_msg;
+}
+
+
+
 int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
 {   
     //critical section start
@@ -32,7 +53,8 @@ int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
     return 0;
 }
 
-void snd_msg(rfdev_t* self, mavlink_message_t* data)// data must not be a heap memory, use by main thread
+// data must not be a heap memory, use by main thread
+void snd_msg(rfdev_t* self, mavlink_message_t* data)
 {
     packet_t* packet = malloc(sizeof(packet_t));
     mavlink_message_t* _msg = malloc(sizeof(mavlink_message_t));
@@ -128,6 +150,7 @@ static int rcv_frm_rf(rfdev_t* self)
     uint8_t ch;
     uint8_t stat;
 
+    //TO DO: this method can discard the packet need another method
     while((ch = uart->super.read_byte(uart)) > 0)
     {
         stat = mavlink_parse_char(0, ch, &tmp_msg, &status);
