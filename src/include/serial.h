@@ -20,8 +20,8 @@ void data_flush(serial_dev_t* self);
 int serial_read(serial_dev_t* self);
 int serial_nread(serial_dev_t* self, size_t len, uint8_t* buffer);
 
-void serial_write(serial_dev_t* self, uint8_t data);
-void serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer);
+int serial_write(serial_dev_t* self, uint8_t data);
+int serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer);
 
 
 
