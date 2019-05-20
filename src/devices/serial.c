@@ -97,8 +97,9 @@ int serial_open(const char* name, int baudrate)
 int serial_read(serial_dev_t* self)
 {
 	int received;
-	read(self->super.fd, &received, 1);
-	return received;
+	int code = read(self->super.fd, &received, 1);
+	
+	return (code > 0) ? (uint8_t)received : code;
 }
 
 int serial_nread(serial_dev_t* self, size_t len, uint8_t* buffer)
@@ -107,14 +108,14 @@ int serial_nread(serial_dev_t* self, size_t len, uint8_t* buffer)
 	return received;
 }
 
-void serial_write(serial_dev_t* self, uint8_t data)
+int serial_write(serial_dev_t* self, uint8_t data)
 {
-	write(self->super.fd, &data, 1);
+	return write(self->super.fd, &data, 1);
 }
 
-void serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer)
+int serial_nwrite(serial_dev_t* self, size_t len, uint8_t* buffer)
 {
-	write(self->super.fd, buffer, len);
+	return write(self->super.fd, buffer, len);
 }
 
 void data_flush(serial_dev_t* self)
