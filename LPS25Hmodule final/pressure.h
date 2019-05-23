@@ -48,25 +48,6 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 
-/** @addtogroup BSP
-  * @{
-  */
-
-/** @addtogroup Components
-  * @{
-  */
-
-/** @addtogroup PRESSURE
-  * @{
-  */
-
-/** @defgroup PRESSURE_Exported_Types
-  * @{
-  */
-
-/**
- * @brief  PRESSURE init structure definition
- */
 typedef struct
 {
   uint8_t OutputDataRate;

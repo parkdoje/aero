@@ -190,6 +190,9 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate, uint8_t accel_scale
     mpu9250_t* self = malloc(sizeof(mpu9250_t));
     sensor_t* super = &self->super;
 
+    self->read_accel_data = read_accel_data;
+    self->read_gyro_data = read_gyro_data;
+
     list_init(&super->buffer_head);
     super->comm = i2c;
     super->sensor_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
@@ -265,9 +268,10 @@ void read_accel_data(mpu9250_t* self, data_t* data)
     data->ts.tv_sec = _ts.tv_sec;
     data->ts.tv_nsec = _ts.tv_nsec;
 
-    data->x = (float)acc[0] * self->accel_res;
-    data->y = (float)acc[1] * self->accel_res;
-    data->z = (float)acc[2] * self->accel_res;
+    for(int i = 0; i < 3; i++)
+    {
+        data->val[i] = (float)acc[i] * self->accel_res;
+    }
 
 }
 
@@ -289,7 +293,9 @@ void read_gyro_data(mpu9250_t* self, data_t* data)
     data->ts.tv_sec = _ts.tv_sec;
     data->ts.tv_nsec = _ts.tv_nsec;
 
-    data->x = (float)gy[0]* self->gyro_res;
-    data->y = (float)gy[1]* self->gyro_res;
-    data->z = (float)gy[2]* self->gyro_res;
+    for(int i = 0; i < 3; i++)
+    {
+        data->val[i] = (float)gy[i] * self->gyro_res;
+    }
+
 }

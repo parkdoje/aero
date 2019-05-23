@@ -22,8 +22,6 @@ rfdev_t* init_rf_comm(serial_dev_t* uart, uint8_t com_code)
     rf->rcv_msg = rcv_msg;
 }
 
-
-
 int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
 {   
     //critical section start

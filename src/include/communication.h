@@ -24,11 +24,11 @@ typedef struct rfdev
 
     //wrapper for comm device
     int (*rcv_msg)(struct rfdev* self);
-    void (*snd_msg)(struct rfdev* self, mavlink_message_t* data);
+    void (*snd_msg)(struct rfdev* self, mavlink_message_t* msg);
 }rfdev_t;
 
 
-
+rfdev_t* init_rf_comm(serial_dev_t* uart, uint8_t com_code);
 
 //rfdev_t may or may not be a heap memory
 //use by main thread, argument pointer need not be a heap memory
@@ -38,6 +38,6 @@ void snd_msg(rfdev_t* self, mavlink_message_t* data);
 //use by comm thread, argument pointer need not be a heap memory
 static int read_snd_msg(rfdev_t* self, mavlink_message_t* dest);
 static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd);
-
+//internal usage
 static int snd_to_rf(rfdev_t* self);
 static int rcv_frm_rf(rfdev_t* self);

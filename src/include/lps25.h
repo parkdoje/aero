@@ -1,10 +1,14 @@
 // include files
 #include "sensor.h"
 #include "i2c.h"
+#include <stdint.h>
+#include <sys/types.h>
 
 typedef struct _lps25
 {
     sensor_t super;
+    uint8_t 
+
 
 
 
