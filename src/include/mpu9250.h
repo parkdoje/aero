@@ -3,8 +3,6 @@
 #include <stdbool.h>
 
 #define MPU9250_ADDR 0x68
-#define GYRO 1
-#define ACCEL 2
 
 
 
