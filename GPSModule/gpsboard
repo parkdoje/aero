@@ -1,0 +1,66 @@
+#include "define.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+void gps_read(int gps_rfd)
+{
+    int rd_cnt;
+    char buf[BUF_SIZE];
+    while(0 < (rd_cnt = read(gps_rfd, buf, sizeof(buf))))
+    {
+        buf[rd_cnt] = '\0';
+
+        printf("<%s Read = %3d char> \n%s\n", MODULE_NAME, rd_cnt, buf);
+        sleep(1);
+    }
+    close(gps_rfd);
+}
+
+void serial_setting(int gps_sfd)
+{
+    struct termios serial;
+
+    memset(&serial, 0, sizeof(serial)); 
+
+    serial.c_iflag=IGNPAR; //입력처리정의, NON parity
+    serial.c_oflag = 0; //출력처리정의
+
+    //포트 세팅 정의(터미널 속도, 데이터 비트, 모드)
+    //통신 속도는 9600으로
+    serial.c_cflag = B9600 | CS8 | CREAD | CLOCAL | crtscts;
+
+    //echo 설정 할지 말자
+    serial.c_lflag = 0;
+
+    serial.c_cc[VTIME] = TIMEOUT;
+    serial.c_cc[VMIN] = MINCHAR;
+
+    tcflush(gps_sfd, TCIFLUSH); //아직전송되지 않았거나 수신처리가 안된 데이터
+    tcsetattr(gps_sfd, TCSANOW, &serial); //모뎀 라인을 초기화 포트세팅
+}
+
+int gps_open()
+{
+    int fd;
+
+    if(0<(fd=open(ACCESS_PATH,0_RDWR)))
+        printf("access success\n");
+    else
+        printf("access fail\n");
+    return fd;
+}
+    int main()
+    {
+        int gps_fd;
+
+        gps_fd = gps_open();
+
+        serial_setting(gps_fd);
+
+        gps_read(gps_fd);
+
+        close(gps_fd);
+
+        return 0;
+    }
