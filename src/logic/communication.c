@@ -85,7 +85,7 @@ static int read_snd_msg(rfdev_t* self, mavlink_message_t* dest)//from comm threa
         pthread_mutex_unlock(&self->snd_lock);
         return -1;
     }
-    ASSERT(!list_empty(&self->rcv));
+    ASSERT(!list_empty(&self->snd));
 
     e = list_pop_front(&self->snd);
     self->snd_count -= 1;
@@ -118,6 +118,7 @@ static void write_rcv_msg(rfdev_t* self, mavlink_message_t* rcvd)//rcvd must not
     self->rcv_count += 1;
 
     pthread_mutex_unlock(&self->rcv_lock);
+    //critical section end
 
     return;
 }
@@ -134,10 +135,15 @@ static int snd_to_rf(rfdev_t* self)
 
     if(stat == -1)
     {
-        return 0;//no more packet to send;
+        return -1;//no more packet to send;
     }
 
-    return uart->super.write_nbyte((comm_device_t*)self, len, &msg_arr);
+    uint16_t snd_len = uart->super.write_nbyte((comm_device_t*)self, len, &msg_arr);
+    if(len != snd_len)
+    {
+        // something
+    }
+    return 0;
 }
 
 static int rcv_frm_rf(rfdev_t* self)
@@ -149,21 +155,78 @@ static int rcv_frm_rf(rfdev_t* self)
     uint8_t stat;
 
     //TO DO: this method can discard the packet need another method
-    while((ch = uart->super.read_byte(uart)) > 0)
+    while((ch = uart->super.read_byte(uart)) >= 0)
     {
         stat = mavlink_parse_char(0, ch, &tmp_msg, &status);
         if (stat)
         {
             if(stat == MAVLINK_FRAMING_BAD_CRC)
             {
-                break;//ERROR!! discard packet 
+                break;
             }
 
             write_rcv_msg(self, &tmp_msg);
-            break;
+
+            return 0;
         }
     }
     
-    return 0;
+    return -1;
+}
+
+static inline bool check(struct timespec cur, struct timespec prev, int sample_rate)
+{
+    long sec_gap = cur.tv_sec - prev.tv_sec;
+    long nsec_gap = cur.tv_nsec - prev.tv_nsec;
+
+    nsec_gap /= 1000000; //in ms
+
+    long ms_gap = sec_gap * 1000 + nsec_gap;
+    return ms_gap >= sample_rate ? true : false;
+}
+
+
+void action(rfdev_t* self)
+{
+    long check_rate[2] = {0,};
+    struct timespec prev_check[2];
+    long cur_time;
+    int ret = 0;
+    struct timespec cur;
+
+    while(1)
+    {
+        clock_gettime(CLOCK_MONOTONIC, &cur);
+        for(int i = 0; i < 2; i++)
+        {
+            if(check(cur, prev_check[i], check_rate[i]))
+            {
+                switch (i)
+                {
+                    case 0:
+                        ret = rcv_frm_rf(self);
+                        break;
+                    case 1:
+                        ret = snd_to_rf(self);
+                        break;
+                }
+                prev_check[i] = cur;
+                if(ret == -1 && check_rate[i] <= 100)
+                {
+                    check_rate[i] += 10;
+                }
+                else if(ret != -1 && check_rate[i] > 0)
+                {
+                    check_rate[i] -= 10;   
+                }
+                else
+                {
+                    // do nothing 
+                }
+            }
+        }
+    }
+    
+    // todo : implement thread func
 }
 
