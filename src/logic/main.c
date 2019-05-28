@@ -11,14 +11,14 @@
 #include <unistd.h>
 #include <pthread.h>
 
-
-
 mpu9250_t* imu = NULL;
 i2c_dev_t* i2c = NULL;
 serial_dev_t* uart1 = NULL;//for wireless 
 serial_dev_t* uart2 = NULL;//for gps
 ctrl_t* ctrl = NULL;
 rfdev_t* rf = NULL;
+
+pthread_t radio, sensor;
 
 
 void init_devices()
@@ -28,7 +28,7 @@ void init_devices()
     uart2 = init_serial("/dev/s", 115200);
     imu = init_mpu9250(i2c, 1000, 8, 250);
     ctrl = init_ctrl(
-            (sensor_t*){imu, NULL, NULL}
+            (sensor_t**){imu, NULL, NULL}
             );
     rf = init_rf_comm(uart1, uart1->super.type);
     return;    
@@ -36,6 +36,8 @@ void init_devices()
 
 void start_device()
 {
+    pthread_create(&radio, NULL, rf->action, rf);
+    pthread_create(&sensor, NULL, ctrl->action, ctrl);
 }
 
 int main()
