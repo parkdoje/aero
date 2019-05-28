@@ -8,15 +8,17 @@
 
 typedef struct _ctrl_t
 {
-    sensor_t* sensor[NUMBER_OF_SENSOR];// 1: mpu9250, 2 : lps25, 3: gps
-    /* To Do : implement edf scheduler for sensor reading, for now we are using round robin*/     
-    void (*start_action)(ctrl_t* self);
-
+    sensor_t* sensor[3];
+    struct list head;
+    pthread_mutex_t lock;
+    int list_cnt;
     
-}ctrl_t; 
+    int (*read_data)(ctrl_t* self, data_t* buf); // from ctrler to main
+}ctrl_t;
 
 ctrl_t* init_ctrl(sensor_t* sensors[3]);
 
-void start_action(ctrl_t* self);
+int read_data(ctrl_t* self, data_t* buf);
+void write_data(ctrl_t* self, data_t* buf); // from ctrler to main
 
-void write_to_buffer(ctrl_t* self, data_t* data);
+void action(ctrl_t* self); // thread function

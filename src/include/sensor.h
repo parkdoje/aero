@@ -24,10 +24,7 @@ typedef struct _data_t
 
 typedef struct _sensor
 {
-	pthread_mutex_t sensor_lock; // handle by controller, not by the sensor self.
 	comm_device_t* comm;
-	struct list buffer_head;
-	unsigned int buf_cnt;
 	int device_addr;
 	unsigned int rate;
 }sensor_t; 

@@ -4,9 +4,6 @@
 
 #define MPU9250_ADDR 0x68
 
-
-
-
 typedef struct mpu9250
 {/*singleton object!*/
     sensor_t super;

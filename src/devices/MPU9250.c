@@ -193,10 +193,8 @@ mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate, uint8_t accel_scale
     self->read_accel_data = read_accel_data;
     self->read_gyro_data = read_gyro_data;
 
-    list_init(&super->buffer_head);
     super->comm = i2c;
-    super->sensor_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-    super->rate = sample_rate;
+    super->rate = sample_rate;//Hz 
     super->device_addr = MPU9250_ADDR;
 
     switch (accel_scale)
