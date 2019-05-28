@@ -8,7 +8,6 @@
 typedef struct _lps25
 {
     sensor_t super;
-    uint8_t 
 
 
 

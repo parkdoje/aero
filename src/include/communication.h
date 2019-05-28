@@ -25,7 +25,7 @@ typedef struct rfdev
     uint16_t rcv_count, snd_count;// scheduling purpose
 
     //wrapper for comm device
-    int (*rcv_msg)(struct rfdev* self);
+    int (*rcv_msg)(struct rfdev* self, mavlink_message_t* msg);
     void (*snd_msg)(struct rfdev* self, mavlink_message_t* msg);
     void (*action)(struct rfdev* self);
 }rfdev_t;

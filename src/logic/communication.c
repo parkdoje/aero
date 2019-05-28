@@ -191,7 +191,7 @@ static inline bool check(struct timespec cur, struct timespec prev, int sample_r
 void action(rfdev_t* self)
 {
     long check_rate[2] = {0,};
-    struct timespec prev_check[2] = {0,};
+    struct timespec prev_check[2] = {0, };
     long cur_time;
     int ret = 0;
     struct timespec cur;
