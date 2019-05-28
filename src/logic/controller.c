@@ -78,12 +78,23 @@ void read_raw_data(sensor_t* s, data_t* buf, int type)
     }
 
 }
+
+static inline bool check(struct timespec cur, struct timespec prev, int sample_rate)
+{
+    long sec_gap = cur.tv_sec - prev.tv_sec;
+    long nsec_gap = cur.tv_nsec - prev.tv_nsec;
+
+    nsec_gap /= 1000000; //in ms
+
+    long ms_gap = sec_gap * 1000 + nsec_gap;
+    return ms_gap >= sample_rate ? true : false;
+}
 void action(ctrl_t* self)// thread_fucntion
 {
     //getting sensor objects
-    struct timespec curr;
+    struct timespec cur;
 
-    int prev_sample[3] = {0, 0, 0};
+    struct timespec prev_sample[3] = {0,};    
     int sample_rate[3] = {
         self->sensor[0]->rate,
         self->sensor[1]->rate, self->sensor[2]->rate
@@ -96,20 +107,19 @@ void action(ctrl_t* self)// thread_fucntion
     }
     
     // periodically do the read write job
-    long cur_time = 0;
     data_t buf;
 
     while(1)
     {
-        clock_gettime(CLOCK_REALTIME_COARSE, &curr);
-        cur_time = curr.tv_nsec / 1000000;
+        clock_gettime(CLOCK_MONOTONIC, &cur);
+        
         for(int i = 0; i < 3; i++)
         {
-            if((cur_time - prev_sample[i]) >= sample_rate[i])
+            if(check(cur, prev_sample[i], sample_rate[i]))
             {
                 switch (i)
                 {
-                case 0:
+                case 0://for imu
                     read_raw_data(self->sensor[i], &buf, ACCEL);
                     write_data(self, &buf);
 
@@ -117,16 +127,16 @@ void action(ctrl_t* self)// thread_fucntion
 
                     read_raw_data(self->sensor[i], &buf, GYRO);
                     write_data(self, &buf);
-                    prev_sample[i] = cur_time;
+                    
                     break;
-                case 1:
+                case 1://for gps
                     break;
-                case 2:
+                case 2: // for barometer
                     break;
-                
                 default:
                     break;
                 }
+                prev_sample[i] = cur;
             }
         }
     }
