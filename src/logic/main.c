@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define NDEBUG 1
+
 mpu9250_t* imu = NULL;
 i2c_dev_t* i2c = NULL;
 serial_dev_t* uart1 = NULL;//for wireless 
@@ -42,5 +44,12 @@ void start_device()
 
 int main()
 {
+    init_devices();
+    start_device();
+
+    pthread_join(radio, NULL);
+    pthread_join(sensor, NULL);
+    return 0;
 
 }
+    

@@ -185,7 +185,7 @@ static void _init_mpu9250(mpu9250_t* self)
     return;
 }
 
-mpu9250_t* init_mpu9250(i2c_dev_t* i2c, uint8_t sample_rate, uint8_t accel_scale, uint16_t gyro_scale)
+mpu9250_t* init_mpu9250(i2c_dev_t* i2c, int sample_rate, uint8_t accel_scale, uint16_t gyro_scale)
 {
     mpu9250_t* self = malloc(sizeof(mpu9250_t));
     sensor_t* super = &self->super;

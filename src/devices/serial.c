@@ -21,7 +21,7 @@ serial_dev_t* init_serial(const char* serial_name, int baudrate)
 	if(super->fd == -1)
 	{
 		printf("fd acquire failed\n");
-		exit(-1);
+		return NULL;
 	}
 	super->type = UART;
 

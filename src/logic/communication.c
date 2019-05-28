@@ -1,7 +1,9 @@
 #include "../include/communication.h"
+#include "../lib/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
  
 rfdev_t* init_rf_comm(serial_dev_t* uart, uint8_t com_code)
 {
@@ -189,7 +191,7 @@ static inline bool check(struct timespec cur, struct timespec prev, int sample_r
 void action(rfdev_t* self)
 {
     long check_rate[2] = {0,};
-    struct timespec prev_check[2];
+    struct timespec prev_check[2] = {0,};
     long cur_time;
     int ret = 0;
     struct timespec cur;
@@ -211,6 +213,7 @@ void action(rfdev_t* self)
                         break;
                 }
                 prev_check[i] = cur;
+
                 if(ret == -1 && check_rate[i] <= 100)
                 {
                     check_rate[i] += 10;

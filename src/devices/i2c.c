@@ -13,6 +13,7 @@ i2c_dev_t* init_i2c(const char* device_name)
 	int fd = open_device(device_name);
 	if(fd < 0) 
 	{
+		printf("acquiring fd fail!\n");
 		return NULL;
 	}
 
@@ -47,7 +48,7 @@ i2c_dev_t* init_i2c(const char* device_name)
 	self->get_addr = get_address;
 	self->write_bit_reg = (
 		self->write_byte_reg != NULL ? i2c_write_bit_reg : NULL);
-		
+
 	printf("i2c ready to use!\n");
 	return self;
 

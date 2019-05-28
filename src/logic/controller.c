@@ -89,7 +89,7 @@ static inline bool check(struct timespec cur, struct timespec prev, int sample_r
     long ms_gap = sec_gap * 1000 + nsec_gap;
     return ms_gap >= sample_rate ? true : false;
 }
-void action(ctrl_t* self)// thread_fucntion
+void ctrl_action(ctrl_t* self)
 {
     //getting sensor objects
     struct timespec cur;
