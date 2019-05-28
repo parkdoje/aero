@@ -1,4 +1,5 @@
 // include files
+#pragma once
 #include "sensor.h"
 #include "i2c.h"
 #include <stdint.h>

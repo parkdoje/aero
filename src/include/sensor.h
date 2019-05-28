@@ -1,4 +1,4 @@
-
+#pragma once
 #include <pthread.h>
 #include "../lib/list.h"
 #include "comm_device.h"
