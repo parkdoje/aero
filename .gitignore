@@ -5,3 +5,7 @@
 /.vscode/
 cscope.*
 tags
+src/test/final
+src/test/result
+src/test/second_data
+*.out
