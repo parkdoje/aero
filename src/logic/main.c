@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define NDEBUG 1
 
 mpu9250_t* imu = NULL;
 i2c_dev_t* i2c = NULL;
@@ -25,7 +24,7 @@ rfdev_t* rf_dev = NULL;
 pthread_t radio, sensor, primary;
 
 
-void read_sensor_buf(ctrl_t* cnt, data_t* buf)
+int read_sensor_buf(ctrl_t* cnt, data_t* buf)
 {
     struct list_elem* e = NULL;
 
@@ -34,7 +33,8 @@ void read_sensor_buf(ctrl_t* cnt, data_t* buf)
     if(cnt->list_cnt == 0)
     {
         pthread_mutex_unlock(&cnt->lock);
-        return;
+        buf->type = -1;
+        return -1;
     }
     ASSERT(!list_empty(&cnt->head));// if this has error list count handle wrong
     
@@ -48,6 +48,8 @@ void read_sensor_buf(ctrl_t* cnt, data_t* buf)
     memcpy(buf, data, sizeof(data_t));
 
     free(data);
+    
+     return 0;
 }
 
 void read_radio_buf(rfdev_t* rf)
@@ -69,28 +71,63 @@ void read_radio_buf(rfdev_t* rf)
 
 void pack_n_send(rfdev_t* rf, data_t* data)
 {
-    mavlink_message_t msg;
-    mavlink_msg_baro_pack();
+    mavlink_message_t msg = {0, };
+
+    float msg_time = (
+        (float)(data->ts.tv_sec) + ((float)(data->ts.tv_nsec) / 1000000)
+    );
+    switch (data->type)
+    {
+    case ACCEL:
+        mavlink_msg_accel_pack(0, 0, &msg, msg_time, data->val[0], data->val[1], data->val[2]);
+        break;
+    case GYRO:
+        mavlink_msg_gyro_pack(0, 0, &msg, msg_time, data->val[0], data->val[1], data->val[2]);
+        break;
+    case POS:
+        break;
+    case NAV:
+        break;
+    case BARO:
+        break;
+    default:
+        break;
+    }
+    rf->snd_msg(rf, &msg);
 }
 
 
 void init_devices()
 {
+    sensor_t* s_list[3] = {imu, NULL, NULL};
     i2c = init_i2c("/dev/somthing");
     uart1 = init_serial("/dev/something", 115200);
     uart2 = init_serial("/dev/s", 115200);
     imu = init_mpu9250(i2c, 1000, 8, 250);
-    controller = init_ctrl(
-            (sensor_t**){imu, NULL, NULL}
-            );
+    controller = init_ctrl(s_list);
     rf_dev = init_rf_comm(uart1, uart1->super.type);
     return;    
+}
+
+void primary_routine()
+{
+    data_t s_buf = {0, };
+    data_t r_buf = {0, };
+    while(1)
+    {
+        if(read_sensor_buf(controller, &s_buf) == 0)
+        {
+            pack_n_send(rf_dev, &s_buf);
+        }
+        read_radio_buf(rf_dev);
+    }
 }
 
 void start_device()
 {
     pthread_create(&radio, NULL, rf_dev->action, rf_dev);
     pthread_create(&sensor, NULL, controller->action, controller);
+    pthread_create(&primary, NULL, primary_routine, NULL);
 }
 
 int main()
