@@ -8,14 +8,15 @@ enum data_type
 {
 	ACCEL,
 	GYRO,
-	BARO,
-	GPS
+	POS,
+	NAV,
+	BARO
 }data_type;
 
 
 typedef struct _data_t
 {
-	uint8_t type;
+	int8_t type;
 	struct timespec ts; 
 	float val[3];
 	struct list_elem elem;	

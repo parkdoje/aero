@@ -1,3 +1,4 @@
+#pragma once
 #include "sensor.h"
 #include "i2c.h"
 #include <stdbool.h>

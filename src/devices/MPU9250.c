@@ -260,7 +260,7 @@ void read_accel_data(mpu9250_t* self, data_t* data)
     acc[1] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_YOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_YOUT_L));
     acc[2] = (int16_t)(i2c->read_byte_reg(i2c, ACCEL_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, ACCEL_ZOUT_L));
 
-    clock_gettime(CLOCK_REALTIME_COARSE, &_ts);
+    clock_gettime(CLOCK_MONOTONIC, &_ts);
 
     data->type = ACCEL;
     data->ts.tv_sec = _ts.tv_sec;
@@ -285,7 +285,7 @@ void read_gyro_data(mpu9250_t* self, data_t* data)
     gy[1] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_YOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_YOUT_L));
     gy[2] = (int16_t)(i2c->read_byte_reg(i2c, GYRO_ZOUT_H) << 8 | i2c->read_byte_reg(i2c, GYRO_ZOUT_L)); 
 
-    clock_gettime(CLOCK_REALTIME_COARSE, &_ts);
+    clock_gettime(CLOCK_MONOTONIC, &_ts);
 
     data->type = GYRO;
     data->ts.tv_sec = _ts.tv_sec;
