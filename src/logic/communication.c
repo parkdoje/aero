@@ -47,8 +47,9 @@ int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
     memcpy(dest, packet->msg, sizeof(mavlink_message_t));// hence packet access does not effect to other thread
 
     free(packet->msg);
-    free(packet);
+    packet->msg = NULL;
 
+    free(packet);
     packet = NULL;
     return 0;
 }
@@ -56,6 +57,7 @@ int rcv_msg(rfdev_t* self, mavlink_message_t* dest)//use by main thread
 // data must not be a heap memory, use by main thread
 void snd_msg(rfdev_t* self, mavlink_message_t* data)
 {
+    ASSERT(data != NULL);
     packet_t* packet = malloc(sizeof(packet_t));
     mavlink_message_t* _msg = malloc(sizeof(mavlink_message_t));
     
