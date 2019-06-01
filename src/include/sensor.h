@@ -10,7 +10,8 @@ enum data_type
 	GYRO,
 	POS,
 	NAV,
-	BARO
+	BARO,
+	COMMAND
 }data_type;
 
 

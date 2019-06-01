@@ -63,6 +63,11 @@ void write_data(ctrl_t* self, data_t* data)
 }
 void read_raw_data(sensor_t* s, data_t* buf, int type)
 {
+    if(s == NULL)
+    {
+        return;
+    }
+
     switch (type)
     {
     case ACCEL:
@@ -72,11 +77,12 @@ void read_raw_data(sensor_t* s, data_t* buf, int type)
     case GYRO:
         ((mpu9250_t*)s)->read_gyro_data(s, buf);
         break;
-    
+    case BARO:
+        ((lps25_t*)s)->read_baro_data((lps25_t*)s, buf);
+        break;
     default:
         break;
     }
-
 }
 
 static inline bool check(struct timespec cur, struct timespec prev, int sample_rate)
@@ -95,14 +101,12 @@ void ctrl_action(ctrl_t* self)
     struct timespec cur;
 
     struct timespec prev_sample[3] = {0,};    
-    int sample_rate[3] = {
-        self->sensor[0]->rate,
-        self->sensor[1]->rate, self->sensor[2]->rate
-    };   
+    int sample_rate[3];
 
     for(int i = 0; i < 3; i++)
     {
         //ms resolution
+        sample_rate[i] = (self->sensor[i] != NULL) ? self->sensor[i]->rate : 1;// if sensor is null then sample rate is toooo big
         sample_rate[i] = (unsigned int)((1.0 / sample_rate[i]) * 1000000.0);//sample rate less than 1kHz
     }
     
@@ -132,6 +136,8 @@ void ctrl_action(ctrl_t* self)
                 case 1://for gps
                     break;
                 case 2: // for barometer
+                    read_raw_data(self->sensor[i], &buf, BARO);
+                    write_data(self, &buf);
                     break;
                 default:
                     break;

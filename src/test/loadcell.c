@@ -90,11 +90,9 @@ int main(int argc, char* argv[])
     uart->data_flush(uart);//discard prev data
     while(!intflag)
     {
-        usleep(10* 1000);
+        usleep(100* 1000);
         read_packet(buf);
         parse_packet(buf);
-        
-        memset(buf, 0x00, sizeof(buf));
     }
 
     fclose(result_file);
