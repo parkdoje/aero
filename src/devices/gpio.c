@@ -20,7 +20,7 @@ int export_gpio(int pin)
 	close(fd);
 	return(0);
 }
-int
+ int
 set_gpio_direction(int pin, int dir)
 {
 	static const char s_directions_str[]  = "in\0out";
