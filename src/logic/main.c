@@ -6,11 +6,13 @@
 #include "../include/communication.h"
 #include "../lib/list.h"
 #include "../lib/debug.h"
+#include "../include/gpio.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 
 
@@ -134,9 +136,11 @@ int main()
 {
     init_devices();
     start_device();
-
+    usleep(1000*1000);
+    
     pthread_join(radio, NULL);
     pthread_join(sensor, NULL);
+    pthread_join(primary, NULL);
     return 0;
 
 }
