@@ -20,6 +20,30 @@ int export_gpio(int pin)
 	close(fd);
 	return(0);
 }
+int
+set_gpio_direction(int pin, int dir)
+{
+	static const char s_directions_str[]  = "in\0out";
+
+#define DIRECTION_MAX 35
+	char path[DIRECTION_MAX];
+	int fd;
+
+	snprintf(path, DIRECTION_MAX, "/sys/class/gpio/gpio%d/direction", pin);
+	fd = open(path, O_WRONLY);
+	if (-1 == fd) {
+		fprintf(stderr, "Failed to open gpio direction for writing!\n");
+		return(-1);
+	}
+
+	if (-1 == write(fd, &s_directions_str[IN == dir ? 0 : 3], IN == dir ? 2 : 3)) {
+		fprintf(stderr, "Failed to set direction!\n");
+		return(-1);
+	}
+
+	close(fd);
+	return(0);
+}
 int unexport_gpio(int pin)
 {
 	char buffer[BUFFER_MAX];

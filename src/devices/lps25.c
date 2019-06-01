@@ -12,6 +12,7 @@ lps25_t* init_lps25(i2c_dev_t* i2c, int sample_rate)
     sensor_t* super = &self->super;
     super->comm = i2c;
     super->device_addr = LPS25_ADDR;
+    self->read_baro_data = read_baro_data;
     switch (sample_rate)
     {
     case 1:
@@ -87,7 +88,7 @@ void read_temp(lps25_t* self, data_t* buf)
     buf->val[0] = tmp_out;
 }
 
-void read_lps_data(lps25_t* self, data_t* dest)
+void read_baro_data(lps25_t* self, data_t* dest)
 {
     data_t t1, t2;
 

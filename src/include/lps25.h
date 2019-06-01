@@ -9,7 +9,7 @@ typedef struct _lps25
 {
     sensor_t super;
 
-    void (*read_baro_data)(lps25_t* self, data_t* buf);
+    void (*read_baro_data)(struct _lps25* self, data_t* buf);
 
 } lps25_t;
 

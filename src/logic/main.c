@@ -118,7 +118,7 @@ void init_devices()
     uart1 = init_serial(uart1_path, 115200);// for rfdevice
 
     uart2 = init_serial(uart2_path, 115200);//for gps
-    imu = init_mpu9250(i2c, 1000, 8, 250);
+    imu = init_mpu9250(i2c, 50, 8, 250);
     lps = init_lps25(i2c, 25);
 
 

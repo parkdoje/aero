@@ -8,6 +8,7 @@
 #include "../include/controller.h"
 #include "../include/mpu9250.h"
 #include "../include/lps25.h"
+#include "../include/gps.h"
 
 ctrl_t* init_ctrl(sensor_t* sensors[3])
 {
@@ -134,6 +135,7 @@ void ctrl_action(ctrl_t* self)
                     
                     break;
                 case 1://for gps
+                    gps_store(self->sensor[i]);
                     break;
                 case 2: // for barometer
                     read_raw_data(self->sensor[i], &buf, BARO);
